@@ -34,7 +34,8 @@ class App extends React.Component<any, any> {
       state: "paused",
       interval: 2000,
       value: 100,
-      timer_id: undefined
+      timer_id: undefined,
+      src: undefined
     }
     
     chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
@@ -47,7 +48,12 @@ class App extends React.Component<any, any> {
           this.startTimer(tab_id)
         }
       })
+      
+      chrome.tabs.sendMessage(tab_id, { action: "popup-open" }, (src) => {
+        this.setState({ src })
+      })
     })
+  
   }
   
   render() {
@@ -58,6 +64,7 @@ class App extends React.Component<any, any> {
         <button onClick={() => this.toggleAction()}>{this.getActionText()}</button>
         <div>{this.state.interval_milisec}</div>
         <CircularProgressWithLabel value={this.state.value} />
+        <img src={this.state.src} alt="Preview" height={200}/>
       </div>
     )
   }

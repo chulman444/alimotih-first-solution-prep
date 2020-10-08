@@ -46,6 +46,13 @@ function main() {
       
       cb()
     }
+    else if(action == "popup-open") {
+      const el = getLargestImg()
+      
+      if(el) {
+        cb(el.src)
+      }
+    }
   });
 }
 
