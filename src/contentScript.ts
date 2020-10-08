@@ -5,7 +5,6 @@ function main() {
   console.log(`ContentScript main called.`)
   
   chrome.runtime.onMessage.addListener((message, sender, cb) => {
-    console.log(message)
     const action = message.action;
     
     if(action == "start") {
@@ -18,11 +17,21 @@ function main() {
           return
         }
         
+        /**
+         * 2020-10-08 16:46
+         * Convert Date to Number because only JSON-parsable data can be
+         * passed to the third parameter callback function.
+         * 
+         * Note that whether I use start_dt from here or from the popup script,
+         * there still exists little 'offset' between the img click trigger and
+         * the interval timer reaching 100%. Annoying.
+         */
+        const start_dt = Number(new Date())
         const timer_id = setInterval(() => {
           biggest_img_el!.click() 
         }, wait_milisec)
         
-        cb(timer_id)
+        cb({ timer_id, start_dt })
         return true
       }
     }

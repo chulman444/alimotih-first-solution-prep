@@ -76,7 +76,8 @@ function initializeStorage(tab_id:number) {
       tab_id: tab_id,
       interval: 2000,
       state: "paused",
-      timer_ids: []
+      timer_ids: [],
+      value: 100
     }
   }, () => {
     chrome.storage.local.get(null, (results) => {

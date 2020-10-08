@@ -29,14 +29,23 @@ class App extends React.Component<any, any> {
   constructor(props:any) {
     super(props)
     
-    this.state = { tab_id: undefined, state: "paused", interval: 2000, value: 100 }
+    this.state = {
+      tab_id: undefined,
+      state: "paused",
+      interval: 2000,
+      value: 100,
+      timer_id: undefined
+    }
     
     chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
       const tab_id = tabs[0].id!
       chrome.storage.local.get([String(tab_id)], (results) => {
-        console.log(results)
         const result = results[tab_id]
         this.setState(result)
+        
+        if(this.state.state == "start") {
+          this.startTimer(tab_id)
+        }
       })
     })
   }
@@ -49,7 +58,6 @@ class App extends React.Component<any, any> {
         <button onClick={() => this.toggleAction()}>{this.getActionText()}</button>
         <div>{this.state.interval_milisec}</div>
         <CircularProgressWithLabel value={this.state.value} />
-        <div>{this.state.response}</div>
       </div>
     )
   }
@@ -85,20 +93,44 @@ class App extends React.Component<any, any> {
       const state = this.state.state
       
       if(state == "paused") {
-        chrome.tabs.sendMessage(tab_id, { action: "start", wait: this.state.interval, tab_id }, (timer_id) => {
-          chrome.runtime.sendMessage({ action: "start", tab_id, timer_id }, () => {
-            this.setState({ state: "start" })
-          })
-        });
+        this.startTimer(tab_id)
       }
       else if(state == "start") {
-        chrome.runtime.sendMessage({ action: "pause", tab_id }, ({ timer_ids }) => {
-          chrome.tabs.sendMessage(tab_id, { action: "pause", timer_ids }, () => {
-            this.setState({ state: "paused" })
-          });
-        })
+        this.pauseTimer(tab_id)
       }
     });
+  }
+  
+  startTimer(tab_id:number) {
+    chrome.tabs.sendMessage(tab_id, { action: "start", wait: this.state.interval, tab_id }, ({ timer_id, start_dt }) => {
+      chrome.runtime.sendMessage({ action: "start", tab_id, timer_id }, () => {
+        const orig_value = this.state.interval
+        const timer_id = setInterval(() => {
+          const passed = (Number(new Date()) - Number(start_dt))
+          const percentage = ((passed / orig_value) * 100)
+          
+          chrome.storage.local.get([String(tab_id)], (results) => {
+            const result = results[tab_id]
+            
+            result.value = percentage
+            chrome.storage.local.set({ [tab_id]: result }, () => {
+              this.setState({ value: percentage })
+            })
+          })
+        }, 100)
+        
+        this.setState({ state: "start", timer_id })
+      })
+    });
+  }
+  
+  pauseTimer(tab_id:number) {
+    chrome.runtime.sendMessage({ action: "pause", tab_id }, ({ timer_ids }) => {
+      chrome.tabs.sendMessage(tab_id, { action: "pause", timer_ids }, () => {
+        clearInterval(this.state.timer_id)
+        this.setState({ state: "paused", timer_id: undefined, value: 100 })
+      });
+    })
   }
 }
 
