@@ -13,10 +13,10 @@
       "js": ["contentScript.js"]
     }
   ],
+  "permissions": ["activeTab", "tabs", "storage"],
   "background": {
     "scripts": [
       "background.js"
     ]
-  },
-  "permissions": ["activeTab", "tabs"]
+  }
 }

@@ -1,10 +1,10 @@
 import React from 'react';
 import { Box, Typography, CircularProgress, CircularProgressProps } from "@material-ui/core"
 
-function CircularProgressWithLabel(props: CircularProgressProps) {
+function CircularProgressWithLabel(props: CircularProgressProps & { value: number }) {
   return (
     <Box position="relative" display="inline-flex">
-      <CircularProgress variant="static" value={50} {...props} />
+      <CircularProgress variant="static" {...props} />
       <Box
         top={0}
         left={0}
@@ -23,33 +23,55 @@ function CircularProgressWithLabel(props: CircularProgressProps) {
   );
 }
 
+type AppState = { tab_id?: number, state: "loading" | "pause" | ""}
+
 class App extends React.Component<any, any> {
   constructor(props:any) {
     super(props)
     
-    this.state = { cur_tab_id: undefined, action: "pause", interval_milisec: 2000, response: undefined }
+    this.state = { tab_id: undefined, state: "paused", interval: 2000, value: 100 }
     
     chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-      this.setState({ cur_tab_id: tabs[0].id! })
+      const tab_id = tabs[0].id!
+      chrome.storage.local.get([String(tab_id)], (results) => {
+        console.log(results)
+        const result = results[tab_id]
+        this.setState(result)
+      })
     })
   }
   
   render() {
     return (
       <div style={ { width: '300px' } }>
-        <div>Tab id: {this.state.cur_tab_id} {this.state.test}</div>
-        <input value={this.state.interval_milisec} onChange={(ev) => this.setState({ interval_milisec: ev.target.value })}/>
+        <div>Tab id: {this.state.tab_id}</div>
+        <input value={this.state.interval} onChange={(ev) => this.onIntervalUpdate(ev.target.value)}/>
         <button onClick={() => this.toggleAction()}>{this.getActionText()}</button>
         <div>{this.state.interval_milisec}</div>
-        <CircularProgressWithLabel />
+        <CircularProgressWithLabel value={this.state.value} />
         <div>{this.state.response}</div>
       </div>
     )
   }
   
+  onIntervalUpdate(interval:string) {
+    const tab_id = this.state.tab_id
+    
+    this.setState({ interval })
+    
+    chrome.storage.local.get([String(tab_id)], (results) => {
+      const result = results[tab_id]
+      
+      result.interval = interval
+      chrome.storage.local.set({ [tab_id]: result }, () => {
+        console.log("Saved")
+      })
+    })
+  }
+  
   getActionText() {
-    const action = this.state.action
-    if(action == "pause") {
+    const state = this.state.state
+    if(state == "paused") {
       return "Start"
     }
     else {
@@ -58,21 +80,23 @@ class App extends React.Component<any, any> {
   }
   
   toggleAction() {
-    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+    chrome.tabs.query({ active: true, currentWindow: true }, async tabs => {
       const tab_id = tabs[0].id!
-      const action = this.state.action
+      const state = this.state.state
       
-      chrome.runtime.sendMessage("And this goes to the background script")
-      
-      if(action == "pause") {
-        chrome.tabs.sendMessage(tab_id, { action: "start", wait: this.state.interval_milisec }, () => {
-          this.setState({ action: "start" })
+      if(state == "paused") {
+        chrome.tabs.sendMessage(tab_id, { action: "start", wait: this.state.interval, tab_id }, (timer_id) => {
+          chrome.runtime.sendMessage({ action: "start", tab_id, timer_id }, () => {
+            this.setState({ state: "start" })
+          })
         });
       }
-      else if(action == "start") {
-        chrome.tabs.sendMessage(tab_id, { action: "pause" }, (foo) => {
-          this.setState({ action: "pause" })
-        });
+      else if(state == "start") {
+        chrome.runtime.sendMessage({ action: "pause", tab_id }, ({ timer_ids }) => {
+          chrome.tabs.sendMessage(tab_id, { action: "pause", timer_ids }, () => {
+            this.setState({ state: "paused" })
+          });
+        })
       }
     });
   }

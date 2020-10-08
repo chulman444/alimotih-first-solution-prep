@@ -4,16 +4,13 @@ function main() {
    */
   console.log(`ContentScript main called.`)
   
-  /**
-   * Store 'worker' ids and `clearTimeout` on all of them to prevent unexpected behavior.
-   */
-  let timer_ids:number[] = []
-  
   chrome.runtime.onMessage.addListener((message, sender, cb) => {
+    console.log(message)
     const action = message.action;
-    const wait_milisec = message.wait;
     
     if(action == "start") {
+      const wait_milisec = message.wait;
+      
       let biggest_img_el:HTMLImageElement|null = getLargestImg()
       if(biggest_img_el) {
         if(wait_milisec < 1000) {
@@ -24,15 +21,21 @@ function main() {
         const timer_id = setInterval(() => {
           biggest_img_el!.click() 
         }, wait_milisec)
-        timer_ids.push(timer_id)
+        
+        cb(timer_id)
+        return true
       }
     }
     else if(action == "pause") {
+      const timer_ids = message.timer_ids
+      
       while(timer_ids.length > 0) {
         const id = timer_ids.pop()
         console.log(`Pause id ${id}`)
         clearTimeout(id)
       }
+      
+      cb()
     }
   });
 }
