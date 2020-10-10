@@ -30,14 +30,15 @@ class App extends React.Component<any, any> {
         this.updateImg()
         
         if(this.state.state == "start") {
-          this.startTimer(tab_id)
+          this.startTimer()
         }
       })
     })
   }
   
   updateImg() {
-    chrome.tabs.sendMessage(this.state.tab_id, { action: "popup-open" }, (src) => {
+    const tab_id = this.state.tab_id
+    chrome.tabs.sendMessage(this.state.tab_id, { action: "popup-open", tab_id }, (src) => {
       this.setState({ src })
     })
   }
@@ -107,20 +108,19 @@ class App extends React.Component<any, any> {
   }
   
   toggleAction() {
-    chrome.tabs.query({ active: true, currentWindow: true }, async tabs => {
-      const tab_id = tabs[0].id!
-      const state = this.state.state
-      
-      if(state == "paused") {
-        this.startTimer(tab_id)
-      }
-      else if(state == "start") {
-        this.pauseTimer(tab_id)
-      }
-    });
+    const state = this.state.state
+    
+    if(state == "paused") {
+      this.startTimer()
+    }
+    else if(state == "start") {
+      this.pauseTimer()
+    }
   }
   
-  startTimer(tab_id:number) {
+  startTimer() {
+    const tab_id = this.state.tab_id
+    
     chrome.tabs.sendMessage(tab_id, { action: "start", wait: this.state.interval, tab_id }, ({ timer_id, start_dt }) => {
       chrome.runtime.sendMessage({ action: "start", tab_id, timer_id }, () => {
         const orig_value = this.state.interval
@@ -145,9 +145,11 @@ class App extends React.Component<any, any> {
     });
   }
   
-  pauseTimer(tab_id:number) {
+  pauseTimer() {
+    const tab_id = this.state.tab_id
+    
     chrome.runtime.sendMessage({ action: "pause", tab_id }, ({ timer_ids }) => {
-      chrome.tabs.sendMessage(tab_id, { action: "pause", timer_ids }, () => {
+      chrome.tabs.sendMessage(tab_id, { action: "pause", timer_ids, tab_id }, () => {
         clearInterval(this.state.timer_id)
         this.setState({ state: "paused", timer_id: undefined, value: 100 })
       });
