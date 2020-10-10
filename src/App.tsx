@@ -1,5 +1,11 @@
 import React from 'react';
-import { Box, Typography, CircularProgress, CircularProgressProps } from "@material-ui/core"
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  CircularProgressProps,
+  Tooltip
+} from "@material-ui/core"
 
 type AppState = { tab_id?: number, state: "loading" | "pause" | ""}
 
@@ -62,7 +68,13 @@ class App extends React.Component<any, any> {
             <button onClick={() => this.toggleAction()}>{this.getActionText()}</button>
           </Box>
         </Box>
-        <img src={this.state.src} alt="Preview" style={{ maxHeight: "300px", maxWidth: "200px" }}/>
+        <Tooltip title="This image on the page will be clicked">
+          <img
+            src={this.state.src}
+            alt="If you are seeing this try reopening the popup"
+            style={{ maxHeight: "300px", maxWidth: "200px" }}
+          />
+        </Tooltip>
       </div>
     )
   }
