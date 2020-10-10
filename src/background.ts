@@ -69,6 +69,19 @@ chrome.runtime.onMessage.addListener((message, sender, cb) => {
      */
     return true
   }
+  else if(action == "setMinImgArea") {
+    const min_img_area = message.min_img_area
+    
+    chrome.storage.local.get([String(tab_id)], (results) => {
+      results[tab_id].min_img_area = min_img_area
+      
+      chrome.storage.local.set({ [String(tab_id)]: results[tab_id] }, () => {
+        cb()
+      })
+    })
+    
+    return true
+  }
 })
 
 function initializeStorage(tab_id:number) {
@@ -78,7 +91,8 @@ function initializeStorage(tab_id:number) {
       interval: 2000,
       state: "paused",
       timer_ids: [],
-      value: 100
+      value: 100,
+      min_img_area: undefined
     }
   }, () => {
     chrome.storage.local.get(null, (results) => {

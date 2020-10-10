@@ -8,6 +8,7 @@ function main() {
     const action = message.action;
     
     if(action == "start") {
+      const tab_id = message.tab_id
       const wait_milisec = message.wait;
       
       let biggest_img_el:HTMLImageElement|null = getLargestImg()
@@ -28,7 +29,10 @@ function main() {
          */
         const start_dt = Number(new Date())
         const timer_id = setInterval(() => {
-          biggest_img_el!.click() 
+          const min_img_area = biggest_img_el!.width * biggest_img_el!.height
+          chrome.runtime.sendMessage({ action: "setMinImgArea", min_img_area, tab_id }, () => {
+            biggest_img_el!.click()
+          })
         }, wait_milisec)
         
         cb({ timer_id, start_dt })
