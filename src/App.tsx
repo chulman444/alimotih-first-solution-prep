@@ -25,19 +25,21 @@ class App extends React.Component<any, any> {
     chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
       const tab_id = tabs[0].id!
       chrome.storage.local.get([String(tab_id)], (results) => {
-        const result = results[tab_id]
-        this.setState(result)
+        results[tab_id].tab_id = tab_id
+        this.setState(results[tab_id])
+        this.updateImg()
         
         if(this.state.state == "start") {
           this.startTimer(tab_id)
         }
       })
-      
-      chrome.tabs.sendMessage(tab_id, { action: "popup-open" }, (src) => {
-        this.setState({ src })
-      })
     })
+  }
   
+  updateImg() {
+    chrome.tabs.sendMessage(this.state.tab_id, { action: "popup-open" }, (src) => {
+      this.setState({ src })
+    })
   }
   
   render() {
@@ -123,6 +125,8 @@ class App extends React.Component<any, any> {
       chrome.runtime.sendMessage({ action: "start", tab_id, timer_id }, () => {
         const orig_value = this.state.interval
         const timer_id = setInterval(() => {
+          this.updateImg()
+          
           const passed = (Number(new Date()) - Number(start_dt))
           const percentage = ((passed / orig_value) * 100)
           
