@@ -46,6 +46,7 @@ chrome.runtime.onMessage.addListener((message, sender, cb) => {
       const timer_ids = (results[tab_id].timer_ids as Array<any>).slice()
       
       results[tab_id].timer_ids = []
+      results[tab_id].value = 100
       results[tab_id].state = "paused"
       
       chrome.storage.local.set({ [String(tab_id)]: results[tab_id] }, () => {
