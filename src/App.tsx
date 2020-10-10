@@ -1,28 +1,6 @@
 import React from 'react';
 import { Box, Typography, CircularProgress, CircularProgressProps } from "@material-ui/core"
 
-function CircularProgressWithLabel(props: CircularProgressProps & { value: number }) {
-  return (
-    <Box position="relative" display="inline-flex">
-      <CircularProgress variant="static" {...props} />
-      <Box
-        top={0}
-        left={0}
-        bottom={0}
-        right={0}
-        position="absolute"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <Typography variant="caption" component="div" color="textSecondary">
-          hihihi
-        </Typography>
-      </Box>
-    </Box>
-  );
-}
-
 type AppState = { tab_id?: number, state: "loading" | "pause" | ""}
 
 class App extends React.Component<any, any> {
@@ -58,13 +36,33 @@ class App extends React.Component<any, any> {
   
   render() {
     return (
-      <div style={ { width: '300px' } }>
+      <div style={ { width: '500px' } }>
         <div>Tab id: {this.state.tab_id}</div>
-        <input value={this.state.interval} onChange={(ev) => this.onIntervalUpdate(ev.target.value)}/>
-        <button onClick={() => this.toggleAction()}>{this.getActionText()}</button>
-        <div>{this.state.interval_milisec}</div>
-        <CircularProgressWithLabel value={this.state.value} />
-        <img src={this.state.src} alt="Preview" height={200}/>
+        <Box position="relative" display="inline-flex">
+          <CircularProgress
+            variant="static"
+            value={this.state.value}
+            size={200}
+          />
+          <Box
+            top={0}
+            left={0}
+            bottom={0}
+            right={0}
+            position="absolute"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <input
+              size={5}
+              value={this.state.interval}
+              onChange={(ev) => this.onIntervalUpdate(ev.target.value)}
+            />
+            <button onClick={() => this.toggleAction()}>{this.getActionText()}</button>
+          </Box>
+        </Box>
+        <img src={this.state.src} alt="Preview" style={{ maxHeight: "300px", maxWidth: "200px" }}/>
       </div>
     )
   }
