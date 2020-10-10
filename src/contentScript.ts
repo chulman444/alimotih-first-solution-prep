@@ -62,8 +62,6 @@ function getLargestImg():HTMLImageElement|null {
     biggest_img_el = biggest_img_el ? biggest_img_el.width < el.width ? el : biggest_img_el : el
   })
   
-  console.log(`Largest img:`, biggest_img_el)
-  
   return biggest_img_el
 }
 
