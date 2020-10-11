@@ -33,6 +33,7 @@ chrome.runtime.onMessage.addListener((message, sender, cb) => {
     chrome.storage.local.get([String(tab_id)], (results) => {
       results[tab_id].timer_ids.push(timer_id)
       results[tab_id].state = "start"
+      results[tab_id].start_dt = message.start_dt
       chrome.storage.local.set({ [String(tab_id)]: results[tab_id] }, () => {
         chrome.storage.local.get([String(tab_id)], (results) => {
           console.log(`Debug background action start`)
@@ -82,6 +83,23 @@ chrome.runtime.onMessage.addListener((message, sender, cb) => {
     
     return true
   }
+  else if(action == "getState") {
+    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+      const tab_id = tabs[0].id!
+      chrome.storage.local.get([String(tab_id)], (results) => {
+        const state = results[tab_id]
+        cb(state)
+      })
+    })
+    
+    return true
+  }
+  else if(action == "getStartDt") {
+    chrome.storage.local.get([String(tab_id)], (results) => {
+      cb({ start_dt: results[tab_id].start_dt })
+    })
+    return true
+  }
 })
 
 function initializeStorage(tab_id:number) {
@@ -92,7 +110,8 @@ function initializeStorage(tab_id:number) {
       state: "paused",
       timer_ids: [],
       value: 100,
-      min_img_area: undefined
+      min_img_area: undefined,
+      start_dt: undefined
     }
   }, () => {
     chrome.storage.local.get(null, (results) => {
