@@ -36,6 +36,14 @@ class App extends React.Component<any, any> {
         })
       })
     })
+    
+    chrome.runtime.getBackgroundPage((bgWindow) => {
+      if(bgWindow) {
+        bgWindow.addEventListener("pause", () => {
+          this.pauseTimer()
+        })
+      }
+    })
   }
   
   updateImg() {

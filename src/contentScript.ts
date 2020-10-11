@@ -73,9 +73,7 @@ function startAutoClick(tab_id:number, wait_milisec:number) {
       
       chrome.runtime.sendMessage({ action: "getMinImgArea", tab_id }, ({ min_img_area: old_min_img_area }) => {
         if(min_img_area < old_min_img_area * 1/3) {
-          chrome.runtime.sendMessage({ action: "pause", tab_id }, () => {
-            console.log(`Img too small. Paused`)
-          })
+          chrome.runtime.sendMessage({ action: "pause", tab_id }, () => {})
         }
         else {
           chrome.runtime.sendMessage({ action: "setMinImgArea", min_img_area, tab_id }, () => {

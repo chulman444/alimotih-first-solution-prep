@@ -51,6 +51,7 @@ chrome.runtime.onMessage.addListener((message, sender, cb) => {
       results[tab_id].state = "paused"
       
       chrome.storage.local.set({ [String(tab_id)]: results[tab_id] }, () => {
+        window.dispatchEvent(new Event("pause"))
         /**
          * 2020-10-08 10:09
          * 
