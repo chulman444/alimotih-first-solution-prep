@@ -166,12 +166,10 @@ class App extends React.Component<any, any> {
   pauseTimer() {
     const tab_id = this.state.tab_id
     
-    chrome.runtime.sendMessage({ action: "pause", tab_id }, ({ timer_ids }) => {
-      chrome.tabs.sendMessage(tab_id, { action: "pause", timer_ids, tab_id }, () => {
-        clearInterval(this.state.timer_id)
-        this.setState({ state: "paused", timer_id: undefined, value: 100 })
-      });
-    })
+    chrome.tabs.sendMessage(tab_id, { action: "pause", tab_id }, () => {
+      clearInterval(this.state.timer_id)
+      this.setState({ state: "paused", timer_id: undefined, value: 100 })
+    });
   }
 }
 
