@@ -72,12 +72,16 @@ function startAutoClick(tab_id:number, wait_milisec:number) {
       const min_img_area = biggest_img_el!.width * biggest_img_el!.height
       
       chrome.runtime.sendMessage({ action: "getMinImgArea", tab_id }, ({ min_img_area: old_min_img_area }) => {
-        console.log(`old_min_img_area`, old_min_img_area)
-        console.log(`min_img_area`, min_img_area)
-        console.log(`timer_id`, timer_id)
-        chrome.runtime.sendMessage({ action: "setMinImgArea", min_img_area, tab_id }, () => {
-          biggest_img_el!.click()
-        })
+        if(min_img_area < old_min_img_area * 1/3) {
+          chrome.runtime.sendMessage({ action: "pause", tab_id }, () => {
+            console.log(`Img too small. Paused`)
+          })
+        }
+        else {
+          chrome.runtime.sendMessage({ action: "setMinImgArea", min_img_area, tab_id }, () => {
+            biggest_img_el!.click()
+          })
+        }
       })
     }, wait_milisec)
     
