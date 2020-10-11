@@ -45,40 +45,42 @@ class App extends React.Component<any, any> {
   
   render() {
     return (
-      <div style={ { width: '500px', height: '300px' } }>
+      <div>
         <div>Tab id: {this.state.tab_id}</div>
-        <Box position="relative" display="inline-flex" style={{ verticalAlign: 'top'}}>
-          <CircularProgress
-            variant="static"
-            value={this.state.value}
-            size={200}
-          />
-          <Box
-            top={0}
-            left={0}
-            bottom={0}
-            right={0}
-            position="absolute"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <input
-              size={5}
-              value={this.state.interval}
-              onChange={(ev) => this.onIntervalUpdate(ev.target.value)}
+        <div style={ { width: '500px', height: '300px', display: "flex", alignItems: "flex-start" } }>
+          <Box position="relative" display="inline-flex">
+            <CircularProgress
+              variant="static"
+              value={this.state.value}
+              size={200}
             />
-            <button onClick={() => this.toggleAction()}>{this.getActionText()}</button>
+            <Box
+              top={0}
+              left={0}
+              bottom={0}
+              right={0}
+              position="absolute"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <input
+                size={5}
+                value={this.state.interval}
+                onChange={(ev) => this.onIntervalUpdate(ev.target.value)}
+              />
+              <button onClick={() => this.toggleAction()}>{this.getActionText()}</button>
+            </Box>
           </Box>
-        </Box>
-        <div style={{ verticalAlign: 'top', display: "inline-flex" }}>
-          <Tooltip title="This image on the page will be clicked">
-            <img
-              src={this.state.src}
-              alt="If you are seeing this try reopening the popup"
-              style={{ maxHeight: "300px", maxWidth: "200px" }}
-            />
-          </Tooltip>
+          <div>
+            <Tooltip title="This image on the page will be clicked">
+              <img
+                src={this.state.src}
+                alt="If you are seeing this try reopening the popup"
+                style={{ maxHeight: "300px", maxWidth: "200px" }}
+              />
+            </Tooltip>
+          </div>
         </div>
       </div>
     )
