@@ -45,9 +45,9 @@ class App extends React.Component<any, any> {
   
   render() {
     return (
-      <div style={ { width: '500px' } }>
+      <div style={ { width: '500px', height: '300px' } }>
         <div>Tab id: {this.state.tab_id}</div>
-        <Box position="relative" display="inline-flex">
+        <Box position="relative" display="inline-flex" style={{ verticalAlign: 'top'}}>
           <CircularProgress
             variant="static"
             value={this.state.value}
@@ -71,13 +71,15 @@ class App extends React.Component<any, any> {
             <button onClick={() => this.toggleAction()}>{this.getActionText()}</button>
           </Box>
         </Box>
-        <Tooltip title="This image on the page will be clicked">
-          <img
-            src={this.state.src}
-            alt="If you are seeing this try reopening the popup"
-            style={{ maxHeight: "300px", maxWidth: "200px" }}
-          />
-        </Tooltip>
+        <div style={{ verticalAlign: 'top', display: "inline-flex" }}>
+          <Tooltip title="This image on the page will be clicked">
+            <img
+              src={this.state.src}
+              alt="If you are seeing this try reopening the popup"
+              style={{ maxHeight: "300px", maxWidth: "200px" }}
+            />
+          </Tooltip>
+        </div>
       </div>
     )
   }
