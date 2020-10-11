@@ -83,6 +83,13 @@ chrome.runtime.onMessage.addListener((message, sender, cb) => {
     
     return true
   }
+  else if(action == "getMinImgArea") {    
+    chrome.storage.local.get([String(tab_id)], (results) => {
+      cb({ min_img_area: results[tab_id].min_img_area })
+    })
+    
+    return true
+  }
   else if(action == "getState") {
     chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
       const tab_id = tabs[0].id!

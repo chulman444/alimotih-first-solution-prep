@@ -10,7 +10,8 @@ function main() {
     console.log(_state)
     
     if(state == "start") {
-      const result = startAutoClick(tab_id, interval)
+      const { timer_id, start_dt } = startAutoClick(tab_id, interval)!
+      chrome.runtime.sendMessage({ action: "start", tab_id, timer_id, start_dt }, () => {})
     }
     else if(state == "paused" || state == undefined) {
       // Do nothing
@@ -49,7 +50,7 @@ function main() {
   });
 }
 
-function startAutoClick(tab_id:number, wait_milisec:number) {      
+function startAutoClick(tab_id:number, wait_milisec:number) {
   let biggest_img_el:HTMLImageElement|null = getLargestImg()
   if(biggest_img_el) {
     if(wait_milisec < 1000) {
@@ -69,8 +70,14 @@ function startAutoClick(tab_id:number, wait_milisec:number) {
     const start_dt = Number(new Date())
     const timer_id = setInterval(() => {
       const min_img_area = biggest_img_el!.width * biggest_img_el!.height
-      chrome.runtime.sendMessage({ action: "setMinImgArea", min_img_area, tab_id }, () => {
-        biggest_img_el!.click()
+      
+      chrome.runtime.sendMessage({ action: "getMinImgArea", tab_id }, ({ min_img_area: old_min_img_area }) => {
+        console.log(`old_min_img_area`, old_min_img_area)
+        console.log(`min_img_area`, min_img_area)
+        console.log(`timer_id`, timer_id)
+        chrome.runtime.sendMessage({ action: "setMinImgArea", min_img_area, tab_id }, () => {
+          biggest_img_el!.click()
+        })
       })
     }, wait_milisec)
     
