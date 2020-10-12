@@ -30,16 +30,7 @@ chrome.runtime.onMessage.addListener((message, sender, cb) => {
   if(action == "start") {
     const timer_id = message.timer_id
     
-    chrome.storage.local.get([String(tab_id)], (results) => {
-      /**
-       * 2020-10-12 11:11
-       * 
-       * Double prevention side effect of bug introduced in `bb84ab8`
-       */
-      if(results[tab_id].state == "start") {
-        return
-      }
-      
+    chrome.storage.local.get([String(tab_id)], (results) => {      
       results[tab_id].timer_ids.push(timer_id)
       results[tab_id].state = "start"
       results[tab_id].start_dt = message.start_dt

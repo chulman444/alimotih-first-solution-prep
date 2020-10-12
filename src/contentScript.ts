@@ -5,11 +5,15 @@ function main() {
   console.log(`ContentScript main called.`)
   
   chrome.runtime.sendMessage({ action: "getState" }, (_state) => {
-    const { state, tab_id, interval } = _state
-    console.log(`Current state of auto trigger`)
-    console.log(_state)
+    const { state, tab_id, interval, timer_ids } = _state
     
     if(state == "start") {
+      while(timer_ids.length > 0) {
+        const id = timer_ids.pop()
+        console.log(`Pause id ${id}`)
+        clearTimeout(id)
+      }
+      
       const { timer_id, start_dt } = startAutoClick(tab_id, interval)!
       chrome.runtime.sendMessage({ action: "start", tab_id, timer_id, start_dt }, () => {})
     }
