@@ -29,7 +29,14 @@ class App extends React.Component<any, any> {
       chrome.storage.local.get([String(tab_id)], (results) => {
         results[tab_id].tab_id = tab_id
         this.setState(results[tab_id], () => {
+          /**
+           * 2020-10-12 15:06
+           * 
+           * This is called eventually in `startTimerAnimation` but needs to show the
+           * image when the pop up opens anyways, regardless of `this.state.state`.
+           */
           this.updateImg()
+          
           if(this.state.state == "start") {
             chrome.runtime.sendMessage({ action: "getStartDt", tab_id }, ({ start_dt }) => {
               this.startTimerAnimation(tab_id, start_dt)
@@ -59,7 +66,7 @@ class App extends React.Component<any, any> {
   
   updateImg() {
     const tab_id = this.state.tab_id
-    chrome.tabs.sendMessage(this.state.tab_id, { action: "popup-open", tab_id }, (src) => {
+    chrome.tabs.sendMessage(this.state.tab_id, { action: "getImgSrc", tab_id }, (src) => {
       this.setState({ src })
     })
   }
@@ -153,25 +160,31 @@ class App extends React.Component<any, any> {
     });
   }
   
-  startTimerAnimation(tab_id:number, start_dt:number) {    
-    const orig_value = this.state.interval
+  startTimerAnimation(tab_id:number, start_dt:number) {
     const timer_id = setInterval(() => {
       this.updateImg()
       
-      const passed = (Number(new Date()) - Number(start_dt))
-      const percentage = ((passed / orig_value) * 100)
-      
-      chrome.storage.local.get([String(tab_id)], (results) => {
-        const result = results[tab_id]
-        
-        result.value = percentage
-        chrome.storage.local.set({ [tab_id]: result }, () => {
-          this.setState({ value: percentage })
-        })
-      })
+      this.updateProgress(start_dt)
     }, 100)
     
     this.setState({ state: "start", timer_id })
+  }
+  
+  updateProgress(start_dt:number) {
+    const passed = (Number(new Date()) - Number(start_dt))
+    const orig_value = this.state.interval
+    const tab_id = this.state.tab_id
+    
+    const percentage = ((passed / orig_value) * 100)
+    
+    chrome.storage.local.get([String(tab_id)], (results) => {
+      const result = results[tab_id]
+      
+      result.value = percentage
+      chrome.storage.local.set({ [tab_id]: result }, () => {
+        this.setState({ value: percentage })
+      })
+    })
   }
   
   pauseTimer() {

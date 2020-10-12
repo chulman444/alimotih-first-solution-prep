@@ -33,7 +33,7 @@ function main() {
       stopAutoClick(tab_id)
       cb()
     }
-    else if(action == "popup-open") {
+    else if(action == "getImgSrc") {
       const el = getLargestImg()
       
       if(el) {
