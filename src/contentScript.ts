@@ -62,18 +62,20 @@ function startAutoClick(tab_id:number, wait_milisec:number) {
   const timer_id = setInterval(() => {
     let biggest_img_el:HTMLImageElement|null = getLargestImg()
     
-    const min_img_area = biggest_img_el!.width * biggest_img_el!.height
+    if(biggest_img_el) {
+      const min_img_area = biggest_img_el!.width * biggest_img_el!.height
     
-    chrome.runtime.sendMessage({ action: "getMinImgArea", tab_id }, ({ min_img_area: old_min_img_area }) => {
-      if(min_img_area < old_min_img_area * 1/3) {
-        stopAutoClick(tab_id)
-      }
-      else {
-        chrome.runtime.sendMessage({ action: "setMinImgArea", min_img_area, tab_id }, () => {
-          biggest_img_el!.click()
-        })
-      }
-    })
+      chrome.runtime.sendMessage({ action: "getMinImgArea", tab_id }, ({ min_img_area: old_min_img_area }) => {
+        if(min_img_area < old_min_img_area * 1/3) {
+          stopAutoClick(tab_id)
+        }
+        else {
+          chrome.runtime.sendMessage({ action: "setMinImgArea", min_img_area, tab_id }, () => {
+            biggest_img_el!.click()
+          })
+        }
+      })
+    }
   }, wait_milisec)
   
   return { timer_id, start_dt }
