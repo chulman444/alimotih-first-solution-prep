@@ -21,7 +21,9 @@ class App extends React.Component<any, any> {
       timer_id: undefined,
       src: undefined
     }
-    
+  }
+  
+  componentDidMount() {
     chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
       const tab_id = tabs[0].id!
       chrome.storage.local.get([String(tab_id)], (results) => {
