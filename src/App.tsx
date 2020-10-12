@@ -42,7 +42,16 @@ class App extends React.Component<any, any> {
     chrome.runtime.getBackgroundPage((bgWindow) => {
       if(bgWindow) {
         bgWindow.addEventListener("pause", () => {
-          this.pauseTimer()
+          /**
+           * 2020-10-12 11:07
+           * A bug was introduced in `bb84ab8`. It was a infinite loop of this event being fired.
+           * The main reason is the the `pauseTimer` is called even when the state is already paused.
+           * 
+           * Consider checking for the `this.state.state` in each `pauseTimer` and `startTimer` later.
+           */
+          if(this.state.state == "start") {
+            this.pauseTimer()
+          }
         })
       }
     })

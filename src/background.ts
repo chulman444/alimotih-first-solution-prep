@@ -31,6 +31,15 @@ chrome.runtime.onMessage.addListener((message, sender, cb) => {
     const timer_id = message.timer_id
     
     chrome.storage.local.get([String(tab_id)], (results) => {
+      /**
+       * 2020-10-12 11:11
+       * 
+       * Double prevention side effect of bug introduced in `bb84ab8`
+       */
+      if(results[tab_id].state == "start") {
+        return
+      }
+      
       results[tab_id].timer_ids.push(timer_id)
       results[tab_id].state = "start"
       results[tab_id].start_dt = message.start_dt
@@ -44,6 +53,15 @@ chrome.runtime.onMessage.addListener((message, sender, cb) => {
   }
   else if(action == "pause") {
     chrome.storage.local.get([String(tab_id)], (results) => {
+      /**
+       * 2020-10-12 11:11
+       * 
+       * Double prevention of bug introduced in `bb84ab8`
+       */
+      if(results[tab_id].state == "paused") {
+        return
+      }
+      
       const timer_ids = (results[tab_id].timer_ids as Array<any>).slice()
       
       results[tab_id].timer_ids = []
