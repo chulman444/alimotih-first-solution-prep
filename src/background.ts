@@ -95,7 +95,8 @@ chrome.runtime.onMessage.addListener((message, sender, cb) => {
   }
   else if(action == "getMinImgArea") {    
     chrome.storage.local.get([String(tab_id)], (results) => {
-      cb({ min_img_area: results[tab_id].min_img_area })
+      const min_img_area = results[tab_id].min_img_area
+      cb(min_img_area)
     })
     
     return true
