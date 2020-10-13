@@ -167,6 +167,10 @@ class App extends React.Component<any, any> {
 
 export default App
 
+/**
+ * Callback to async await
+ */
+
 async function getTabId() {
   const tab_id = await new Promise<number>((res, rej) => {
     chrome.tabs.query({ active: true, currentWindow: true }, tabs => {

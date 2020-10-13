@@ -112,6 +112,10 @@ function getLargestImg():HTMLImageElement|null {
   return biggest_img_el
 }
 
+/**
+ * Callback to async await
+ */
+
 async function getState() {
   const state = await new Promise<any>((res, rej) => {
     chrome.runtime.sendMessage({ action: "getState" }, (state) => {
