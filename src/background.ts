@@ -117,6 +117,18 @@ chrome.runtime.onMessage.addListener((message, sender, cb) => {
     })
     return true
   }
+  else if(action == "updateValue") {
+    const value = message.value
+    chrome.storage.local.get([String(tab_id)], (results) => {
+      const result = results[tab_id]
+      
+      result.value = value
+      chrome.storage.local.set({ [tab_id]: result }, () => {
+        cb()
+      })
+    })
+    return true
+  }
 })
 
 function initializeStorage(tab_id:number) {

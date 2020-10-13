@@ -23,52 +23,41 @@ class App extends React.Component<any, any> {
     }
   }
   
-  componentDidMount() {
-    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-      const tab_id = tabs[0].id!
-      chrome.storage.local.get([String(tab_id)], (results) => {
-        results[tab_id].tab_id = tab_id
-        this.setState(results[tab_id], () => {
-          /**
-           * 2020-10-12 15:06
-           * 
-           * This is called eventually in `startTimerAnimation` but needs to show the
-           * image when the pop up opens anyways, regardless of `this.state.state`.
-           */
-          this.updateImg()
-          
-          if(this.state.state == "start") {
-            chrome.runtime.sendMessage({ action: "getStartDt", tab_id }, ({ start_dt }) => {
-              this.startTimerAnimation(tab_id, start_dt)
-            })
-          }
-        })
-      })
-    })
+  async componentDidMount() {
+    const tab_id = await getTabId()
+    const entry = await getStorageEntry(tab_id)
+    entry.tab_id = tab_id
+    const img_src = await getImgSrc(tab_id)
+    entry.src = img_src
     
-    chrome.runtime.getBackgroundPage((bgWindow) => {
-      if(bgWindow) {
-        bgWindow.addEventListener("pause", () => {
-          /**
-           * 2020-10-12 11:07
-           * A bug was introduced in `bb84ab8`. It was a infinite loop of this event being fired.
-           * The main reason is the the `pauseTimer` is called even when the state is already paused.
-           * 
-           * Consider checking for the `this.state.state` in each `pauseTimer` and `startTimer` later.
-           */
-          if(this.state.state == "start") {
-            this.pauseTimer()
-          }
-        })
-      }
-    })
+    await this.setupBackgrounPageEventListener()
+    
+    console.log(entry)
+    
+    await new Promise((res, rej) => this.setState(entry, () => res()))
+    
+    if(this.state.state == "start") {
+      const start_dt = await getStartDt(tab_id)
+      this.startTimerAnimation(tab_id, start_dt)
+    }
   }
   
-  updateImg() {
-    const tab_id = this.state.tab_id
-    chrome.tabs.sendMessage(this.state.tab_id, { action: "getImgSrc", tab_id }, (src) => {
-      this.setState({ src })
-    })
+  async setupBackgrounPageEventListener() {
+    const bgWindow = await getBgWindow()
+    if(bgWindow) {
+      bgWindow.addEventListener("pause", () => {
+        /**
+         * 2020-10-12 11:07
+         * A bug was introduced in `bb84ab8`. It was a infinite loop of this event being fired.
+         * The main reason is the the `pauseTimer` is called even when the state is already paused.
+         * 
+         * Consider checking for the `this.state.state` in each `pauseTimer` and `startTimer` later.
+         */
+        if(this.state.state == "start") {
+          this.pauseTimer()
+        }
+      })
+    }
   }
   
   render() {
@@ -114,19 +103,10 @@ class App extends React.Component<any, any> {
     )
   }
   
-  onIntervalUpdate(interval:string) {
-    const tab_id = this.state.tab_id
-    
+  async onIntervalUpdate(interval:string) {
+    const tab_id = this.state.tab_id    
+    await updateInterval(tab_id, interval)
     this.setState({ interval })
-    
-    chrome.storage.local.get([String(tab_id)], (results) => {
-      const result = results[tab_id]
-      
-      result.interval = interval
-      chrome.storage.local.set({ [tab_id]: result }, () => {
-        console.log("Saved")
-      })
-    })
   }
   
   getActionText() {
@@ -161,30 +141,18 @@ class App extends React.Component<any, any> {
   }
   
   startTimerAnimation(tab_id:number, start_dt:number) {
-    const timer_id = setInterval(() => {
-      this.updateImg()
+    const timer_id = setInterval(async () => {
+      const passed = (Number(new Date()) - Number(start_dt))
+      const orig_value = this.state.interval      
+      const percentage = ((passed / orig_value) * 100)
       
-      this.updateProgress(start_dt)
+      await updateValue(tab_id, percentage)
+      
+      const src = await getImgSrc(tab_id)
+      this.setState({ value: percentage, src })
     }, 100)
     
     this.setState({ state: "start", timer_id })
-  }
-  
-  updateProgress(start_dt:number) {
-    const passed = (Number(new Date()) - Number(start_dt))
-    const orig_value = this.state.interval
-    const tab_id = this.state.tab_id
-    
-    const percentage = ((passed / orig_value) * 100)
-    
-    chrome.storage.local.get([String(tab_id)], (results) => {
-      const result = results[tab_id]
-      
-      result.value = percentage
-      chrome.storage.local.set({ [tab_id]: result }, () => {
-        this.setState({ value: percentage })
-      })
-    })
   }
   
   pauseTimer() {
@@ -198,3 +166,70 @@ class App extends React.Component<any, any> {
 }
 
 export default App
+
+async function getTabId() {
+  const tab_id = await new Promise<number>((res, rej) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+      const tab_id = tabs[0].id!
+      res(tab_id)
+    })
+  })
+  
+  return tab_id
+}
+
+async function getStorageEntry(tab_id:number) {
+  const result = await new Promise<any>((res, rej) => {
+    chrome.storage.local.get([String(tab_id)], (results) => {
+      res(results[tab_id])
+    })
+  })
+  return result
+}
+
+async function getImgSrc(tab_id:number) {
+  const src = await new Promise<any>((res, rej) => {
+    chrome.tabs.sendMessage(tab_id, { action: "getImgSrc", tab_id }, (src) => {
+      res(src)
+    })
+  })
+  return src
+}
+
+async function getStartDt(tab_id:number) {
+  const start_dt = await new Promise<number>((res, rej) => {
+    chrome.runtime.sendMessage({ action: "getStartDt", tab_id }, ({ start_dt }) => {
+      res(start_dt)
+    })
+  })
+  return start_dt
+}
+
+async function updateValue(tab_id:number, value:number) {
+  await new Promise((res, rej) => {
+    chrome.runtime.sendMessage({ action: "updateValue", tab_id, value }, () => {
+      res()
+    })
+  })
+}
+
+async function updateInterval(tab_id:number, input:any) {
+  await new Promise((res, rej) => {
+    chrome.storage.local.get([String(tab_id)], (results) => {
+      const result = results[tab_id]
+      
+      result.interval = input
+      chrome.storage.local.set({ [tab_id]: result }, () => {
+        res()
+      })
+    })
+  })
+}
+
+async function getBgWindow() {
+  return await new Promise<Window>((res, rej) => {
+    chrome.runtime.getBackgroundPage((bgWindow) => {
+      res(bgWindow)
+    })
+  })
+}
