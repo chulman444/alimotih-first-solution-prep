@@ -19,6 +19,7 @@ class App extends React.Component<any, any> {
       interval: 2000,
       value: 100,
       timer_id: undefined,
+      invalid_img_area: false,
       src: undefined
     }
   }
@@ -45,7 +46,7 @@ class App extends React.Component<any, any> {
   async setupBackgrounPageEventListener() {
     const bgWindow = await getBgWindow()
     if(bgWindow) {
-      bgWindow.addEventListener("pause", () => {
+      bgWindow.addEventListener("invalidImg", () => {
         /**
          * 2020-10-12 11:07
          * A bug was introduced in `bb84ab8`. It was a infinite loop of this event being fired.
@@ -54,7 +55,7 @@ class App extends React.Component<any, any> {
          * Consider checking for the `this.state.state` in each `pauseTimer` and `startTimer` later.
          */
         if(this.state.state == "start") {
-          this.pauseTimer()
+          this.pauseTimerAnimation(true)
         }
       })
     }
@@ -65,30 +66,36 @@ class App extends React.Component<any, any> {
       <div>
         <div>Tab id: {this.state.tab_id}</div>
         <div style={ { width: '500px', height: '300px', display: "flex", alignItems: "flex-start" } }>
-          <Box position="relative" display="inline-flex">
-            <CircularProgress
-              variant="static"
-              value={this.state.value}
-              size={200}
-            />
-            <Box
-              top={0}
-              left={0}
-              bottom={0}
-              right={0}
-              position="absolute"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-            >
-              <input
-                size={5}
-                value={this.state.interval}
-                onChange={(ev) => this.onIntervalUpdate(ev.target.value)}
+          <div>
+            <Box position="relative" display="inline-flex">
+              <CircularProgress
+                variant="static"
+                value={this.state.value}
+                size={200}
               />
-              <button onClick={() => this.toggleAction()}>{this.getActionText()}</button>
+              <Box
+                top={0}
+                left={0}
+                bottom={0}
+                right={0}
+                position="absolute"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <input
+                  size={5}
+                  value={this.state.interval}
+                  onChange={(ev) => this.onIntervalUpdate(ev.target.value)}
+                />
+                <button onClick={() => this.toggleAction()}>{this.getActionText()}</button>
+              </Box>
             </Box>
-          </Box>
+            {
+              this.state.invalid_img_area ?
+                <div>Paused due to invalid image size</div> : <div></div>
+            }
+          </div>
           <div>
             <Tooltip title="This image on the page will be clicked">
               <img
@@ -152,16 +159,20 @@ class App extends React.Component<any, any> {
       this.setState({ value: percentage, src })
     }, 100)
     
-    this.setState({ state: "start", timer_id })
+    this.setState({ state: "start", invalid_img_area: false, timer_id })
   }
   
   pauseTimer() {
     const tab_id = this.state.tab_id
     
     chrome.tabs.sendMessage(tab_id, { action: "pause", tab_id }, () => {
-      clearInterval(this.state.timer_id)
-      this.setState({ state: "paused", timer_id: undefined, value: 100 })
+      this.pauseTimerAnimation()
     });
+  }
+  
+  pauseTimerAnimation(invalid_img_area:boolean = false) {
+    clearInterval(this.state.timer_id)
+    this.setState({ state: "paused", timer_id: undefined, value: 100, invalid_img_area })
   }
 }
 

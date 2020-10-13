@@ -20,8 +20,22 @@ async function onPageLoad() {
       clearTimeout(id)
     }
     
-    const { timer_id, start_dt } = startAutoClick(tab_id, interval)!
-    await backgroundNotifyStart(tab_id, timer_id, start_dt)
+    let biggest_img_el:HTMLImageElement|null = getLargestImg()
+    
+    if(biggest_img_el) {
+      const min_img_area = biggest_img_el!.width * biggest_img_el!.height
+      const old_min_img_area = await getMinImgArea(tab_id)
+    
+      if(min_img_area < old_min_img_area * 1/3) {
+        await stopAutoClick(tab_id)
+        console.log(`Stop auto click in onPageLoad`)
+        await popupNotifyInvalidImg(tab_id)
+      }
+    }
+    else {
+      const { timer_id, start_dt } = startAutoClick(tab_id, interval)!
+      await backgroundNotifyStart(tab_id, timer_id, start_dt)
+    }
   }
   else if(state == "paused" || state == undefined) {
     // Do nothing
@@ -76,7 +90,8 @@ function startAutoClick(tab_id:number, wait_milisec:number) {
       const old_min_img_area = await getMinImgArea(tab_id)
     
       if(min_img_area < old_min_img_area * 1/3) {
-        stopAutoClick(tab_id)
+        await stopAutoClick(tab_id)
+        await popupNotifyInvalidImg(tab_id)
       }
       else {
         chrome.runtime.sendMessage({ action: "setMinImgArea", min_img_area, tab_id }, () => {
@@ -145,6 +160,14 @@ async function getMinImgArea(tab_id:number) {
 async function setMinImgArea(tab_id:number, min_img_area:number) {
   await new Promise((res, rej) => {
     chrome.runtime.sendMessage({ action: "setMinImgArea", min_img_area, tab_id }, () => {
+      res()
+    })
+  })
+}
+
+async function popupNotifyInvalidImg(tab_id:number) {
+  await new Promise((res, rej) => {
+    chrome.runtime.sendMessage({ action: "invalidImg", tab_id }, () => {
       res()
     })
   })

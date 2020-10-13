@@ -33,6 +33,7 @@ chrome.runtime.onMessage.addListener((message, sender, cb) => {
     chrome.storage.local.get([String(tab_id)], (results) => {      
       results[tab_id].timer_ids.push(timer_id)
       results[tab_id].state = "start"
+      results[tab_id].invalid_img_area = false
       results[tab_id].start_dt = message.start_dt
       chrome.storage.local.set({ [String(tab_id)]: results[tab_id] }, () => {
         chrome.storage.local.get([String(tab_id)], (results) => {
@@ -60,7 +61,6 @@ chrome.runtime.onMessage.addListener((message, sender, cb) => {
       results[tab_id].state = "paused"
       
       chrome.storage.local.set({ [String(tab_id)]: results[tab_id] }, () => {
-        window.dispatchEvent(new Event("pause"))
         /**
          * 2020-10-08 10:09
          * 
@@ -130,6 +130,18 @@ chrome.runtime.onMessage.addListener((message, sender, cb) => {
     })
     return true
   }
+  else if(action == "invalidImg") {
+    chrome.storage.local.get([String(tab_id)], (results) => {
+      const result = results[tab_id]
+      
+      result.invalid_img_area = true
+      chrome.storage.local.set({ [tab_id]: result }, () => {
+        cb()
+      })
+    })
+    
+    window.dispatchEvent(new CustomEvent("invalidImg")) 
+  }
 })
 
 function initializeStorage(tab_id:number) {
@@ -141,6 +153,7 @@ function initializeStorage(tab_id:number) {
       timer_ids: [],
       value: 100,
       min_img_area: undefined,
+      invalid_img_area: false,
       start_dt: undefined
     }
   }, () => {
