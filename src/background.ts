@@ -37,12 +37,11 @@ chrome.runtime.onMessage.addListener((message, sender, cb) => {
       results[tab_id].min_img_area = undefined
       results[tab_id].start_dt = message.start_dt
       chrome.storage.local.set({ [String(tab_id)]: results[tab_id] }, () => {
-        chrome.storage.local.get([String(tab_id)], (results) => {
-          console.log(`Debug background action start`)
-          console.log(results)
-        })
+        cb()
       })
     })
+    
+    return true
   }
   else if(action == "pause") {
     chrome.storage.local.get([String(tab_id)], (results) => {
