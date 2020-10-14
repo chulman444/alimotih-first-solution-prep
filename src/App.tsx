@@ -221,7 +221,7 @@ async function getStartDt(tab_id:number) {
 }
 
 async function updateValue(tab_id:number, value:number) {
-  await new Promise((res, rej) => {
+  return await new Promise((res, rej) => {
     chrome.runtime.sendMessage({ action: "updateValue", tab_id, value }, () => {
       res()
     })
@@ -229,7 +229,7 @@ async function updateValue(tab_id:number, value:number) {
 }
 
 async function updateInterval(tab_id:number, input:any) {
-  await new Promise((res, rej) => {
+  return await new Promise((res, rej) => {
     chrome.storage.local.get([String(tab_id)], (results) => {
       const result = results[tab_id]
       

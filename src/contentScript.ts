@@ -142,7 +142,7 @@ async function getState() {
 }
 
 async function backgroundNotifyStart(tab_id:number, timer_id:number, start_dt:number) {
-  await new Promise((res, rej) => {
+  return await new Promise((res, rej) => {
     chrome.runtime.sendMessage({ action: "start", tab_id, timer_id, start_dt }, () => {
       res()
     })
@@ -158,7 +158,7 @@ async function getMinImgArea(tab_id:number) {
 }
 
 async function setMinImgArea(tab_id:number, min_img_area:number) {
-  await new Promise((res, rej) => {
+  return await new Promise((res, rej) => {
     chrome.runtime.sendMessage({ action: "setMinImgArea", min_img_area, tab_id }, () => {
       res()
     })
@@ -166,7 +166,7 @@ async function setMinImgArea(tab_id:number, min_img_area:number) {
 }
 
 async function popupNotifyInvalidImg(tab_id:number) {
-  await new Promise((res, rej) => {
+  return await new Promise((res, rej) => {
     chrome.runtime.sendMessage({ action: "invalidImg", tab_id }, () => {
       res()
     })
