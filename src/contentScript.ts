@@ -43,18 +43,28 @@ async function onPageLoad() {
 }
 
 async function setupMessageHandler() {
-  chrome.runtime.onMessage.addListener(async (message, sender, cb) => {
+  chrome.runtime.onMessage.addListener((message, sender, cb) => {
     const action = message.action;
     const tab_id = message.tab_id
     
     if(action == "start") {
       const result = startAutoClick(tab_id, message.wait)
       if(result) {
-        cb(result)
+        const { timer_id, start_dt } = result
+        backgroundNotifyStart(tab_id, timer_id, start_dt)
+          .then((result) => {
+            cb(result)
+          })
+        
+        return true
       }
     }
     else if(action == "pause") {      
-      await stopAutoClick(tab_id)
+      stopAutoClick(tab_id)
+        .then(() => {
+          cb()
+        })
+      return true
     }
     else if(action == "getImgSrc") {
       const el = getLargestImg()

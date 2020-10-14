@@ -140,10 +140,8 @@ class App extends React.Component<any, any> {
   startTimer() {
     const tab_id = this.state.tab_id
     
-    chrome.tabs.sendMessage(tab_id, { action: "start", wait: this.state.interval, tab_id }, ({ timer_id, start_dt }) => {
-      chrome.runtime.sendMessage({ action: "start", tab_id, timer_id, start_dt }, () => {
-        this.startTimerAnimation(tab_id, start_dt)
-      })
+    chrome.tabs.sendMessage(tab_id, { action: "start", wait: this.state.interval, tab_id }, ({ start_dt }) => {
+      this.startTimerAnimation(tab_id, start_dt)
     });
   }
   
