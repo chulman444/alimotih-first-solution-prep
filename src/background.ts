@@ -34,6 +34,7 @@ chrome.runtime.onMessage.addListener((message, sender, cb) => {
       results[tab_id].timer_ids.push(timer_id)
       results[tab_id].state = "start"
       results[tab_id].invalid_img_area = false
+      results[tab_id].min_img_area = undefined
       results[tab_id].start_dt = message.start_dt
       chrome.storage.local.set({ [String(tab_id)]: results[tab_id] }, () => {
         chrome.storage.local.get([String(tab_id)], (results) => {
