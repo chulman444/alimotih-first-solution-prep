@@ -13,6 +13,11 @@ class App extends React.Component<any, any> {
   constructor(props:any) {
     super(props)
     
+    /**
+     * 2020-10-15 19:58
+     * Will be overridden in `componentDidMount`. Refer to the
+     * `background.ts > initializeStorage` for the overriding value.
+     */
     this.state = {
       tab_id: undefined,
       state: "paused",
