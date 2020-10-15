@@ -23,7 +23,7 @@ class App extends React.Component<any, any> {
       state: "paused",
       interval: 5,
       value: 100,
-      timer_id: undefined,
+      timer_animation_id: undefined,
       invalid_img_area: false,
       src: undefined
     }
@@ -35,6 +35,17 @@ class App extends React.Component<any, any> {
     entry.tab_id = tab_id
     const img_src = await getImgSrc(tab_id)
     entry.src = img_src
+    /**
+     * 2020-10-15 20:00
+     * `timer_ids` refer to the interval tasks that trigger auto click in
+     * content script.
+     */
+    delete entry.timer_ids
+    /**
+     * 2020-10-15 20:03
+     * Property only relevant for the App component
+     */
+    entry.timer_animation_id = undefined
     
     await this.setupBackgrounPageEventListener()
     
@@ -149,7 +160,7 @@ class App extends React.Component<any, any> {
   }
   
   startTimerAnimation(tab_id:number, start_dt:number) {
-    const timer_id = setInterval(async () => {
+    const timer_animation_id = setInterval(async () => {
       const passed_milisec = (Number(new Date()) - Number(start_dt))
       const passed_sec = passed_milisec / 1000
       const orig_value = this.state.interval      
@@ -161,7 +172,7 @@ class App extends React.Component<any, any> {
       this.setState({ value: percentage, src })
     }, 100)
     
-    this.setState({ state: "start", invalid_img_area: false, timer_id })
+    this.setState({ state: "start", invalid_img_area: false, timer_animation_id })
   }
   
   pauseTimer() {
@@ -173,8 +184,8 @@ class App extends React.Component<any, any> {
   }
   
   pauseTimerAnimation(invalid_img_area:boolean = false) {
-    clearInterval(this.state.timer_id)
-    this.setState({ state: "paused", timer_id: undefined, value: 100, invalid_img_area })
+    clearInterval(this.state.timer_animation_id)
+    this.setState({ state: "paused", timer_animation_id: undefined, value: 100, invalid_img_area })
   }
 }
 

@@ -161,13 +161,22 @@ async function initializeStorage(tab_id:number) {
   return await new Promise((res, rej) => {
     chrome.storage.local.set({
       [String(tab_id)]: {
+        /**
+         * 2020-10-15 20:02
+         * Relevant in the popup
+         */
         tab_id: tab_id,
         interval: DEFAULT_WAIT_SECONDS,
         state: "paused",
-        timer_ids: [],
         value: 100,
-        min_img_area: undefined,
         invalid_img_area: false,
+        
+        /**
+         * 2020-10-15 20:02
+         * Not relevant in the popup script
+         */
+        timer_ids: [],
+        min_img_area: undefined,
         start_dt: undefined
       }
     }, () => {
