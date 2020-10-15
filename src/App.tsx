@@ -33,8 +33,6 @@ class App extends React.Component<any, any> {
     
     await this.setupBackgrounPageEventListener()
     
-    console.log(entry)
-    
     await new Promise((res, rej) => this.setState(entry, () => res()))
     
     if(this.state.state == "start") {
