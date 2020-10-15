@@ -48,12 +48,12 @@ async function setupMessageHandler() {
     const tab_id = message.tab_id
     
     if(action == "start") {
-      const result = startAutoClick(tab_id, message.wait)
-      if(result) {
-        const { timer_id, start_dt } = result
+      const auto_click_result = startAutoClick(tab_id, message.wait)
+      if(auto_click_result) {
+        const { timer_id, start_dt } = auto_click_result
         backgroundNotifyStart(tab_id, timer_id, start_dt)
-          .then((result) => {
-            cb(result)
+          .then(() => {
+            cb(auto_click_result)
           })
         
         return true
