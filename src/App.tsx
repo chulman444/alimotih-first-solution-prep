@@ -16,7 +16,7 @@ class App extends React.Component<any, any> {
     this.state = {
       tab_id: undefined,
       state: "paused",
-      interval: 2000,
+      interval: 5,
       value: 100,
       timer_id: undefined,
       invalid_img_area: false,
@@ -145,9 +145,10 @@ class App extends React.Component<any, any> {
   
   startTimerAnimation(tab_id:number, start_dt:number) {
     const timer_id = setInterval(async () => {
-      const passed = (Number(new Date()) - Number(start_dt))
+      const passed_milisec = (Number(new Date()) - Number(start_dt))
+      const passed_sec = passed_milisec / 1000
       const orig_value = this.state.interval      
-      const percentage = ((passed / orig_value) * 100)
+      const percentage = ((passed_sec / orig_value) * 100)
       
       await updateValue(tab_id, percentage)
       

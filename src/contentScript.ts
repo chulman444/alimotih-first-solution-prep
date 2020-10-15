@@ -76,11 +76,13 @@ async function setupMessageHandler() {
   });
 }
 
-function startAutoClick(tab_id:number, wait_milisec:number) {
-  if(wait_milisec < 1000) {
-    alert("Please provide a value greater than 1 second. Alimotih doesn't want to cause 'unexpected behavior' on your browser.")
+function startAutoClick(tab_id:number, wait_sec:number) {
+  if(wait_sec < 1 || wait_sec > 60) {
+    alert("Please provide a value between 1 second and 60 seconds. Alimotih doesn't want to cause 'unexpected behavior' on your browser.")
     return
   }
+  
+  const wait_milisec = wait_sec * 1000
   
   /**
    * 2020-10-08 16:46

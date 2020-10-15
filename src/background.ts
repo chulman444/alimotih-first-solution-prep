@@ -1,3 +1,5 @@
+const DEFAULT_WAIT_SECONDS = 5
+
 chrome.tabs.onCreated.addListener(function(tab) {
   const tab_id = tab.id
   if(tab_id) {
@@ -160,7 +162,7 @@ async function initializeStorage(tab_id:number) {
     chrome.storage.local.set({
       [String(tab_id)]: {
         tab_id: tab_id,
-        interval: 2000,
+        interval: DEFAULT_WAIT_SECONDS,
         state: "paused",
         timer_ids: [],
         value: 100,
