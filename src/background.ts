@@ -104,8 +104,19 @@ chrome.runtime.onMessage.addListener((message, sender, cb) => {
   else if(action == "getState") {
     chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
       const tab_id = tabs[0].id!
-      chrome.storage.local.get([String(tab_id)], (results) => {
-        const state = results[tab_id]
+      chrome.storage.local.get([String(tab_id)], async (results) => {
+        let state = results[tab_id]
+        
+        if(state == undefined) {
+          await initializeStorage(tab_id)
+          await new Promise((res, rej) => {
+            chrome.storage.local.get([String(tab_id)], async (results) => {
+              state = results[tab_id]
+              res()
+            })
+          })
+        }
+        
         cb(state)
       })
     })
@@ -144,22 +155,25 @@ chrome.runtime.onMessage.addListener((message, sender, cb) => {
   }
 })
 
-function initializeStorage(tab_id:number) {
-  chrome.storage.local.set({
-    [String(tab_id)]: {
-      tab_id: tab_id,
-      interval: 2000,
-      state: "paused",
-      timer_ids: [],
-      value: 100,
-      min_img_area: undefined,
-      invalid_img_area: false,
-      start_dt: undefined
-    }
-  }, () => {
-    chrome.storage.local.get(null, (results) => {
-      console.log(`initializeStorage debug ${tab_id}:`)
-      console.log(results)
+async function initializeStorage(tab_id:number) {
+  return await new Promise((res, rej) => {
+    chrome.storage.local.set({
+      [String(tab_id)]: {
+        tab_id: tab_id,
+        interval: 2000,
+        state: "paused",
+        timer_ids: [],
+        value: 100,
+        min_img_area: undefined,
+        invalid_img_area: false,
+        start_dt: undefined
+      }
+    }, () => {
+      chrome.storage.local.get(null, (results) => {
+        console.log(`initializeStorage debug ${tab_id}:`)
+        console.log(results)
+        res()
+      })
     })
   })
 }
