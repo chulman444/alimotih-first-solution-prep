@@ -114,7 +114,7 @@ class App extends React.Component<any, any> {
             <Tooltip title="This image on the page will be clicked">
               <img
                 src={this.state.src}
-                alt="If you are seeing this try reopening the popup"
+                alt={this.state.src == undefined ? "No image source was found from the page." : "This image element will be clicked."}
                 style={{ maxHeight: "300px", maxWidth: "200px" }}
               />
             </Tooltip>
