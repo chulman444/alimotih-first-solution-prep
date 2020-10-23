@@ -111,6 +111,7 @@ class App extends React.Component<any, any> {
                   size={5}
                   value={this.state.interval}
                   onChange={(ev) => this.onIntervalUpdate(ev.target.value)}
+                  disabled={this.state.state == "start"}
                 />
                 <button onClick={() => this.toggleAction()}>{this.getActionText()}</button>
               </Box>

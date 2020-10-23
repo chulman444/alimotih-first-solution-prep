@@ -48,12 +48,7 @@ async function setupMessageHandler() {
 }
 
 async function startAutoClick(tab_id:number, wait_sec:number) {
-  const timer_ids = await getEntry(tab_id, "timer_ids")
-  while(timer_ids.length > 0) {
-    const id = timer_ids.pop()
-    console.log(`Pause id ${id}`)
-    clearTimeout(id)
-  }
+  await clearTimers(tab_id)
   
   if(wait_sec < 1 || wait_sec > 60) {
     alert("Please provide a value between 1 second and 60 seconds. Alimotih doesn't want to cause 'unexpected behavior' on your browser.")
@@ -91,33 +86,41 @@ async function startAutoClick(tab_id:number, wait_sec:number) {
   }, wait_milisec)
   
   if(timer_id != null && start_dt != null ) {
-    await backgroundNotifyStart(tab_id, timer_id, start_dt)
+    await updateEntry(tab_id, {
+      timer_ids: [timer_id],
+      state: "start",
+      invalid_img_area: false,
+      min_img_area: undefined,
+      start_dt
+    })
     return { timer_id, start_dt }
   }
 }
 
 async function stopAutoClick(tab_id:number) {
-  const { [tab_id]: result } = await browser.storage.local.get([String(tab_id)])
+  const state = await getEntry(tab_id, "state")
   /**
    * 2020-10-12 11:11
    * 
    * Double prevention of bug introduced in `bb84ab8`
    */
-  if(result.state == "paused") {
+  if(state == "paused") {
     return
   }
-
-  const timer_ids = (result.timer_ids as Array<any>).slice()
-
-  result.timer_ids = []
-  result.value = 100
-  result.state = "paused"
-
-  await browser.storage.local.set({ [String(tab_id)]: result })
   
+  await clearTimers(tab_id)
+  
+  await updateEntry(tab_id, {
+    timer_ids: [],
+    value: 100,
+    state: "paused",
+  })
+}
+
+async function clearTimers(tab_id:number) {
+  const timer_ids = await getEntry(tab_id, "timer_ids")
   while(timer_ids.length > 0) {
     const id = timer_ids.pop()
-    console.log(`Pause id ${id}`)
     clearTimeout(id)
   }
 }
@@ -129,18 +132,4 @@ function getLargestImg():HTMLImageElement|null {
   })
   
   return biggest_img_el
-}
-
-/**
- * Callback to async await
- */
-
-async function backgroundNotifyStart(tab_id:number, timer_id:number, start_dt:number) {
-  const { [tab_id]: result } = await browser.storage.local.get([String(tab_id)])
-  result.timer_ids.push(timer_id)
-  result.state = "start"
-  result.invalid_img_area = false
-  result.min_img_area = undefined
-  result.start_dt = start_dt
-  await browser.storage.local.set({ [String(tab_id)]: result })
 }
