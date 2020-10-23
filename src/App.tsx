@@ -7,6 +7,7 @@ import {
   Tooltip
 } from "@material-ui/core"
 import { browser } from "webextension-polyfill-ts"
+import { updateEntry, getEntry } from "./storage-local"
 
 type AppState = { tab_id?: number, state: "loading" | "pause" | ""}
 
@@ -33,7 +34,7 @@ class App extends React.Component<any, any> {
   async componentDidMount() {
     const [tab] = await browser.tabs.query({ active: true, currentWindow: true })
     const tab_id = tab.id!
-    const { [tab_id]: entry } = await browser.storage.local.get([String(tab_id)])
+    const entry = await getEntry(tab_id)
     entry.tab_id = tab_id
     try {
       const img_src = await browser.tabs.sendMessage(tab_id, { action: "getImgSrc", tab_id })      
@@ -61,7 +62,7 @@ class App extends React.Component<any, any> {
     await new Promise((res, rej) => this.setState(entry, () => res()))
     
     if(this.state.state == "start") {
-      const { [tab_id]: { start_dt } } = await browser.storage.local.get([String(tab_id)])
+      const start_dt = await getEntry(tab_id, "start_dt")
       this.startTimerAnimation(tab_id, start_dt)
     }
   }
@@ -134,10 +135,8 @@ class App extends React.Component<any, any> {
   }
   
   async onIntervalUpdate(interval:string) {
-    const tab_id = this.state.tab_id    
-    const { [tab_id]: result } = await browser.storage.local.get([String(tab_id)])
-    result.interval = interval
-    await browser.storage.local.set({ [tab_id]: result })
+    const tab_id = this.state.tab_id
+    await updateEntry(tab_id, { interval })
     this.setState({ interval })
   }
   
@@ -176,9 +175,7 @@ class App extends React.Component<any, any> {
       const orig_value = this.state.interval      
       const percentage = ((passed_sec / orig_value) * 100)
       
-      const { [tab_id]: result } = await browser.storage.local.get([String(tab_id)])
-      result.value = percentage
-      await browser.storage.local.set({ [tab_id]: result })
+      await updateEntry(tab_id, { value: percentage })
       
       const src = await browser.tabs.sendMessage(tab_id, { action: "getImgSrc", tab_id })
       this.setState({ value: percentage, src })

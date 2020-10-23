@@ -1,4 +1,5 @@
 import { browser } from "webextension-polyfill-ts"
+import { updateEntry, getEntry } from "./storage-local"
 
 async function main() {
   /**
@@ -13,7 +14,8 @@ async function main() {
 main()
 
 async function onPageLoad() {
-  const { state, tab_id, interval } = await browser.runtime.sendMessage({ action: "getState" })
+  const tab_id = await browser.runtime.sendMessage({ action: "getTabId" })
+  const { state, interval } = await getEntry(tab_id)
   
   if(state == "start") {    
     await startAutoClick(tab_id, interval);
@@ -46,7 +48,7 @@ async function setupMessageHandler() {
 }
 
 async function startAutoClick(tab_id:number, wait_sec:number) {
-  const { timer_ids } = await browser.runtime.sendMessage({ action: "getState" })
+  const timer_ids = await getEntry(tab_id, "timer_ids")
   while(timer_ids.length > 0) {
     const id = timer_ids.pop()
     console.log(`Pause id ${id}`)
@@ -75,16 +77,14 @@ async function startAutoClick(tab_id:number, wait_sec:number) {
     
     if(biggest_img_el) {
       const min_img_area = biggest_img_el!.width * biggest_img_el!.height
-      const old_min_img_area = await getMinImgArea(tab_id)
+      const old_min_img_area = await getEntry(tab_id, "min_img_area")
     
       if(min_img_area < old_min_img_area * 1/3) {
         await stopAutoClick(tab_id)
-        await popupNotifyInvalidImg(tab_id)
+        await await browser.runtime.sendMessage({ action: "invalidImg", tab_id })
       }
       else {
-        const { [tab_id]: result } = await browser.storage.local.get([String(tab_id)])
-        result.min_img_area = min_img_area
-        await browser.storage.local.set({ [String(tab_id)]: result })
+        await updateEntry(tab_id, { min_img_area })
         biggest_img_el!.click()
       }
     }
@@ -143,46 +143,4 @@ async function backgroundNotifyStart(tab_id:number, timer_id:number, start_dt:nu
   result.min_img_area = undefined
   result.start_dt = start_dt
   await browser.storage.local.set({ [String(tab_id)]: result })
-}
-
-async function getMinImgArea(tab_id:number) {
-  const { [tab_id]: { min_img_area } } = await browser.storage.local.get([String(tab_id)])
-  return min_img_area
-}
-
-async function popupNotifyInvalidImg(tab_id:number) {
-  await browser.runtime.sendMessage({ action: "invalidImg", tab_id })
-}
-
-const DEFAULT_WAIT_SECONDS = 5
-async function initializeStorage(tab_id:number) {
-  return await new Promise((res, rej) => {
-    chrome.storage.local.set({
-      [String(tab_id)]: {
-        /**
-         * 2020-10-15 20:02
-         * Relevant in the popup
-         */
-        tab_id: tab_id,
-        interval: DEFAULT_WAIT_SECONDS,
-        state: "paused",
-        value: 100,
-        invalid_img_area: false,
-        
-        /**
-         * 2020-10-15 20:02
-         * Not relevant in the popup script
-         */
-        timer_ids: [],
-        min_img_area: undefined,
-        start_dt: undefined
-      }
-    }, () => {
-      chrome.storage.local.get(null, (results) => {
-        console.log(`initializeStorage debug ${tab_id}:`)
-        console.log(results)
-        res()
-      })
-    })
-  })
 }
