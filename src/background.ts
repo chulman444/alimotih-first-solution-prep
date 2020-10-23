@@ -1,17 +1,19 @@
+import { browser } from "webextension-polyfill-ts"
+
 const DEFAULT_WAIT_SECONDS = 5
 
-chrome.tabs.onCreated.addListener(function(tab) {
+browser.tabs.onCreated.addListener(function(tab) {
   const tab_id = tab.id
   if(tab_id) {
     initializeStorage(tab_id)
   }
 })
 
-chrome.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
+browser.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
   // This is called when the url changes but the page doesn't 'reload'
 })
 
-chrome.tabs.onRemoved.addListener(function(tab_id) {
+browser.tabs.onRemoved.addListener(function(tab_id) {
   chrome.storage.local.remove(String(tab_id), () => {
     chrome.storage.local.get(null, (results) => {
       console.log(`onRemoved debug ${tab_id}:`)
@@ -20,140 +22,32 @@ chrome.tabs.onRemoved.addListener(function(tab_id) {
   })
 })
 
-chrome.windows.onRemoved.addListener(function() {
+browser.windows.onRemoved.addListener(function() {
   console.log(`Clear local storage`)
   chrome.storage.local.clear()
 })
 
-chrome.runtime.onMessage.addListener((message, sender, cb) => {
+browser.runtime.onMessage.addListener(async (message, sender) => {
   const action = message.action
   const tab_id = message.tab_id
   
-  if(action == "start") {
-    const timer_id = message.timer_id
-    
-    chrome.storage.local.get([String(tab_id)], (results) => {      
-      results[tab_id].timer_ids.push(timer_id)
-      results[tab_id].state = "start"
-      results[tab_id].invalid_img_area = false
-      results[tab_id].min_img_area = undefined
-      results[tab_id].start_dt = message.start_dt
-      chrome.storage.local.set({ [String(tab_id)]: results[tab_id] }, () => {
-        cb()
-      })
-    })
-    
-    return true
-  }
-  else if(action == "pause") {
-    chrome.storage.local.get([String(tab_id)], (results) => {
-      /**
-       * 2020-10-12 11:11
-       * 
-       * Double prevention of bug introduced in `bb84ab8`
-       */
-      if(results[tab_id].state == "paused") {
-        return
-      }
-      
-      const timer_ids = (results[tab_id].timer_ids as Array<any>).slice()
-      
-      results[tab_id].timer_ids = []
-      results[tab_id].value = 100
-      results[tab_id].state = "paused"
-      
-      chrome.storage.local.set({ [String(tab_id)]: results[tab_id] }, () => {
-        /**
-         * 2020-10-08 10:09
-         * 
-         * https://developer.chrome.com/extensions/runtime#event-onMessage
-         * 
-         * "Should be" but seems like it MUST be a non-array JSON format.
-         */
-        cb({ timer_ids })
-      })
-    })
-    /**
-     * 2020-10-08 10:09
-     * 
-     * https://developer.chrome.com/extensions/runtime#event-onMessage
-     * 
-     * Must return true to use the third argument properly. Took long time to debug this
-     */
-    return true
-  }
-  else if(action == "setMinImgArea") {
-    const min_img_area = message.min_img_area
-    
-    chrome.storage.local.get([String(tab_id)], (results) => {
-      results[tab_id].min_img_area = min_img_area
-      
-      chrome.storage.local.set({ [String(tab_id)]: results[tab_id] }, () => {
-        cb()
-      })
-    })
-    
-    return true
-  }
-  else if(action == "getMinImgArea") {    
-    chrome.storage.local.get([String(tab_id)], (results) => {
-      const min_img_area = results[tab_id].min_img_area
-      cb(min_img_area)
-    })
-    
-    return true
+  if(action == "invalidImg") {
+    const { [tab_id]: result } = await browser.storage.local.get([String(tab_id)])
+    result.invalid_img_area = true
+    browser.storage.local.set({ [tab_id]: result })
+    window.dispatchEvent(new CustomEvent("invalidImg")) 
   }
   else if(action == "getState") {
-    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-      const tab_id = tabs[0].id!
-      chrome.storage.local.get([String(tab_id)], async (results) => {
-        let state = results[tab_id]
-        
-        if(state == undefined) {
-          await initializeStorage(tab_id)
-          await new Promise((res, rej) => {
-            chrome.storage.local.get([String(tab_id)], async (results) => {
-              state = results[tab_id]
-              res()
-            })
-          })
-        }
-        
-        cb(state)
-      })
-    })
-    
-    return true
-  }
-  else if(action == "getStartDt") {
-    chrome.storage.local.get([String(tab_id)], (results) => {
-      cb({ start_dt: results[tab_id].start_dt })
-    })
-    return true
-  }
-  else if(action == "updateValue") {
-    const value = message.value
-    chrome.storage.local.get([String(tab_id)], (results) => {
-      const result = results[tab_id]
+    const [tab] = await browser.tabs.query({ active: true, currentWindow: true })
+    const tab_id = tab.id!
+    let { [tab_id]: state } = await browser.storage.local.get([String(tab_id)])
+    if(state == undefined) {
+      await initializeStorage(tab_id)
+      const { [tab_id]: _state } = await browser.storage.local.get([String(tab_id)])
+      state = _state
+    }
       
-      result.value = value
-      chrome.storage.local.set({ [tab_id]: result }, () => {
-        cb()
-      })
-    })
-    return true
-  }
-  else if(action == "invalidImg") {
-    chrome.storage.local.get([String(tab_id)], (results) => {
-      const result = results[tab_id]
-      
-      result.invalid_img_area = true
-      chrome.storage.local.set({ [tab_id]: result }, () => {
-        cb()
-      })
-    })
-    
-    window.dispatchEvent(new CustomEvent("invalidImg")) 
+    return state
   }
 })
 

@@ -6,6 +6,7 @@ import {
   CircularProgressProps,
   Tooltip
 } from "@material-ui/core"
+import { browser } from "webextension-polyfill-ts"
 
 type AppState = { tab_id?: number, state: "loading" | "pause" | ""}
 
@@ -30,11 +31,19 @@ class App extends React.Component<any, any> {
   }
   
   async componentDidMount() {
-    const tab_id = await getTabId()
-    const entry = await getStorageEntry(tab_id)
+    const [tab] = await browser.tabs.query({ active: true, currentWindow: true })
+    const tab_id = tab.id!
+    const { [tab_id]: entry } = await browser.storage.local.get([String(tab_id)])
     entry.tab_id = tab_id
-    const img_src = await getImgSrc(tab_id)
-    entry.src = img_src
+    try {
+      const img_src = await browser.tabs.sendMessage(tab_id, { action: "getImgSrc", tab_id })      
+      entry.src = img_src
+    }
+    catch(e) {
+      console.log(e)
+      throw e
+    }
+
     /**
      * 2020-10-15 20:00
      * `timer_ids` refer to the interval tasks that trigger auto click in
@@ -52,13 +61,13 @@ class App extends React.Component<any, any> {
     await new Promise((res, rej) => this.setState(entry, () => res()))
     
     if(this.state.state == "start") {
-      const start_dt = await getStartDt(tab_id)
+      const { [tab_id]: { start_dt } } = await browser.storage.local.get([String(tab_id)])
       this.startTimerAnimation(tab_id, start_dt)
     }
   }
   
   async setupBackgrounPageEventListener() {
-    const bgWindow = await getBgWindow()
+    const bgWindow = await browser.runtime.getBackgroundPage()
     if(bgWindow) {
       bgWindow.addEventListener("invalidImg", () => {
         /**
@@ -126,7 +135,9 @@ class App extends React.Component<any, any> {
   
   async onIntervalUpdate(interval:string) {
     const tab_id = this.state.tab_id    
-    await updateInterval(tab_id, interval)
+    const { [tab_id]: result } = await browser.storage.local.get([String(tab_id)])
+    result.interval = interval
+    await browser.storage.local.set({ [tab_id]: result })
     this.setState({ interval })
   }
   
@@ -151,12 +162,11 @@ class App extends React.Component<any, any> {
     }
   }
   
-  startTimer() {
+  async startTimer() {
     const tab_id = this.state.tab_id
     
-    chrome.tabs.sendMessage(tab_id, { action: "start", wait: this.state.interval, tab_id }, ({ start_dt }) => {
-      this.startTimerAnimation(tab_id, start_dt)
-    });
+    const { start_dt } = await browser.tabs.sendMessage(tab_id, { action: "start", wait: this.state.interval, tab_id })
+    this.startTimerAnimation(tab_id, start_dt);
   }
   
   startTimerAnimation(tab_id:number, start_dt:number) {
@@ -166,21 +176,22 @@ class App extends React.Component<any, any> {
       const orig_value = this.state.interval      
       const percentage = ((passed_sec / orig_value) * 100)
       
-      await updateValue(tab_id, percentage)
+      const { [tab_id]: result } = await browser.storage.local.get([String(tab_id)])
+      result.value = percentage
+      await browser.storage.local.set({ [tab_id]: result })
       
-      const src = await getImgSrc(tab_id)
+      const src = await browser.tabs.sendMessage(tab_id, { action: "getImgSrc", tab_id })
       this.setState({ value: percentage, src })
     }, 100)
     
     this.setState({ state: "start", invalid_img_area: false, timer_animation_id })
   }
   
-  pauseTimer() {
+  async pauseTimer() {
     const tab_id = this.state.tab_id
     
-    chrome.tabs.sendMessage(tab_id, { action: "pause", tab_id }, () => {
-      this.pauseTimerAnimation()
-    });
+    await browser.tabs.sendMessage(tab_id, { action: "pause", tab_id })
+    this.pauseTimerAnimation();
   }
   
   pauseTimerAnimation(invalid_img_area:boolean = false) {
@@ -190,74 +201,3 @@ class App extends React.Component<any, any> {
 }
 
 export default App
-
-/**
- * Callback to async await
- */
-
-async function getTabId() {
-  const tab_id = await new Promise<number>((res, rej) => {
-    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-      const tab_id = tabs[0].id!
-      res(tab_id)
-    })
-  })
-  
-  return tab_id
-}
-
-async function getStorageEntry(tab_id:number) {
-  const result = await new Promise<any>((res, rej) => {
-    chrome.storage.local.get([String(tab_id)], (results) => {
-      res(results[tab_id])
-    })
-  })
-  return result
-}
-
-async function getImgSrc(tab_id:number) {
-  const src = await new Promise<any>((res, rej) => {
-    chrome.tabs.sendMessage(tab_id, { action: "getImgSrc", tab_id }, (src) => {
-      res(src)
-    })
-  })
-  return src
-}
-
-async function getStartDt(tab_id:number) {
-  const start_dt = await new Promise<number>((res, rej) => {
-    chrome.runtime.sendMessage({ action: "getStartDt", tab_id }, ({ start_dt }) => {
-      res(start_dt)
-    })
-  })
-  return start_dt
-}
-
-async function updateValue(tab_id:number, value:number) {
-  return await new Promise((res, rej) => {
-    chrome.runtime.sendMessage({ action: "updateValue", tab_id, value }, () => {
-      res()
-    })
-  })
-}
-
-async function updateInterval(tab_id:number, input:any) {
-  return await new Promise((res, rej) => {
-    chrome.storage.local.get([String(tab_id)], (results) => {
-      const result = results[tab_id]
-      
-      result.interval = input
-      chrome.storage.local.set({ [tab_id]: result }, () => {
-        res()
-      })
-    })
-  })
-}
-
-async function getBgWindow() {
-  return await new Promise<Window>((res, rej) => {
-    chrome.runtime.getBackgroundPage((bgWindow) => {
-      res(bgWindow)
-    })
-  })
-}
