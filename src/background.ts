@@ -14,18 +14,14 @@ browser.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
   // This is called when the url changes but the page doesn't 'reload'
 })
 
-browser.tabs.onRemoved.addListener(function(tab_id) {
-  chrome.storage.local.remove(String(tab_id), () => {
-    chrome.storage.local.get(null, (results) => {
-      console.log(`onRemoved debug ${tab_id}:`)
-      console.log(results)
-    })
-  })
+browser.tabs.onRemoved.addListener(async function(tab_id) {
+  await browser.storage.local.remove(String(tab_id))
+  const entries = await browser.storage.local.get()
 })
 
-browser.windows.onRemoved.addListener(function() {
+browser.windows.onRemoved.addListener(async function() {
   console.log(`Clear local storage`)
-  chrome.storage.local.clear()
+  await browser.storage.local.clear()
 })
 
 browser.runtime.onMessage.addListener(async (message, sender) => {

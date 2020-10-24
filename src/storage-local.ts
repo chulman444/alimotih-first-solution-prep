@@ -1,4 +1,3 @@
-import { keys } from "@material-ui/core/styles/createBreakpoints"
 import { browser } from "webextension-polyfill-ts"
 
 /**
