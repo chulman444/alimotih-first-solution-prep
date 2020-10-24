@@ -3,12 +3,12 @@ import { updateEntry, getEntry } from "./storage-local"
 
 async function main() {
   /**
-   * Keep this log message to see if changing url reloads the page or updates the content only
+   * 2020-10-24 12:03
+   * Not triggered when the tab is just created and is an empty url, or special urls like
+   * `chrome://extensions`. Not that `browser.tabs.onUpdated` does get triggered when
+   * an empty url tab is created and when navigating to 'special urls'.
    */
-  console.log(`ContentScript main called.`)
-  
   await onPageLoad()
-  
   setupMessageHandler()
 }
 main()
@@ -25,7 +25,7 @@ async function onPageLoad() {
   }
 }
 
-async function setupMessageHandler() {
+function setupMessageHandler() {
   browser.runtime.onMessage.addListener(async (message, sender) => {
     const action = message.action;
     const tab_id = message.tab_id

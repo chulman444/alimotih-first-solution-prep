@@ -4,14 +4,22 @@ import { updateEntry, getEntry } from "./storage-local"
 const DEFAULT_WAIT_SECONDS = 5
 
 browser.tabs.onCreated.addListener(async function(tab) {
-  const tab_id = tab.id
-  if(tab_id) {
-    await getEntry(tab_id)
-  }
+  /**
+   * 2020-10-24 11:48
+   * Triggered when the tab is created by clicking on new tab or `ctrl + t` or
+   * restoring the closed tab with `ctrl + shift + t`.
+   */
 })
 
 browser.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
-  // This is called when the url changes but the page doesn't 'reload'
+  /**
+   * 2020-10-24 11:48
+   * Triggered after `tabs.onCreated` fires. Does NOT get triggered when page reloads.
+   * Seems like it only gets triggered when the url changes.
+   * 
+   * Googled "javascript how to detect url change". Getting `onhashchange` which does not
+   * work if url doesn't have hash.
+   */
 })
 
 browser.tabs.onRemoved.addListener(async function(tab_id) {
