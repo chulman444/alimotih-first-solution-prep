@@ -37,7 +37,8 @@ export async function getEntry(tab_id:number, key?:string):Promise<any> {
          */
         timer_ids: [],
         min_img_area: undefined,
-        start_dt: undefined
+        start_dt: undefined,
+        host: undefined,
       }
     })
     return await getEntry(tab_id, key)
@@ -50,4 +51,25 @@ export async function updateEntry(tab_id:number, pairs:{ [key:string]: any }) {
     entry[key] = pairs[key]
   }
   await browser.storage.local.set({ [tab_id]: entry })
+  const result = await getEntry(tab_id)
+  return result
+}
+
+/**
+ * 2020-10-24 12:42
+ * Prevents unexpected behavior when the user forgets to pause the extension, and navigates to
+ * other url. Eg, manga websites to YouTube. Then YouTube videos will click every interval.
+ * 
+ * @param tab_id 
+ * @param host `location.host` includes the port number as well while `location.hostname` doesn't.
+ *             Eg, User could be using the extension in `localhost`.
+ *             https://developer.mozilla.org/en-US/docs/Web/API/Location
+ */
+export async function reinitIfPossible(tab_id:number, host:string) {
+  let entry = await getEntry(tab_id)
+  if(entry.host != host) {
+    await browser.storage.local.remove(String(tab_id))
+    entry = await updateEntry(tab_id, { host })
+  }
+  return entry
 }

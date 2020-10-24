@@ -1,5 +1,5 @@
 import { browser } from "webextension-polyfill-ts"
-import { updateEntry, getEntry } from "./storage-local"
+import { updateEntry, getEntry, reinitIfPossible } from "./storage-local"
 
 async function main() {
   /**
@@ -15,7 +15,7 @@ main()
 
 async function onPageLoad() {
   const tab_id = await browser.runtime.sendMessage({ action: "getTabId" })
-  const { state, interval } = await getEntry(tab_id)
+  const { state, interval } = await reinitIfPossible(tab_id, location.host)
   
   if(state == "start") {    
     await startAutoClick(tab_id, interval);
@@ -125,6 +125,15 @@ async function clearTimers(tab_id:number) {
   }
 }
 
+/**
+ * 2020-10-24 13:11
+ * TODO? Restriction on the size of the width and height? In YouTube, width of 9999 img
+ * element is picked from this function but still clicks the first video that appears
+ * at the top left of the video.
+ * 
+ * I don't assume this extension to be used for YouTube, but I need to add restrictions
+ * on the size of the img element?
+ */
 function getLargestImg():HTMLImageElement|null {
   let biggest_img_el:HTMLImageElement|null = null
   document.querySelectorAll("img").forEach(el => {

@@ -1,5 +1,5 @@
 import { browser } from "webextension-polyfill-ts"
-import { updateEntry, getEntry } from "./storage-local"
+import { updateEntry, getEntry, reinitIfPossible } from "./storage-local"
 
 const DEFAULT_WAIT_SECONDS = 5
 
@@ -11,7 +11,7 @@ browser.tabs.onCreated.addListener(async function(tab) {
    */
 })
 
-browser.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
+browser.tabs.onUpdated.addListener(async function(tab_id, change_info, tab) {
   /**
    * 2020-10-24 11:48
    * Triggered after `tabs.onCreated` fires. Does NOT get triggered when page reloads.
@@ -20,6 +20,9 @@ browser.tabs.onUpdated.addListener(function(tab_id, change_info, tab) {
    * Googled "javascript how to detect url change". Getting `onhashchange` which does not
    * work if url doesn't have hash.
    */
+  if(tab.url) {
+    await reinitIfPossible(tab_id, new URL(tab.url).host)
+  }
 })
 
 browser.tabs.onRemoved.addListener(async function(tab_id) {
