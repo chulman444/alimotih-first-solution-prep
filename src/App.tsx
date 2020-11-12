@@ -74,7 +74,12 @@ class App extends React.Component<any, any> {
      * setTimeout.
      */
     await new Promise((res, rej) => this.setState({ src: img_src }, () => setTimeout(() => res(), 500)))
-    const is_loaded = this.targetImg.current!.complete
+    /**
+     * 2020-11-13 02:55
+     * Don't use `complete` because it returns true even when the img url throws an error, and img element
+     * displaying the `alt` content.
+     */
+    const is_loaded = this.targetImg.current!.naturalWidth > 0
     
     if(is_loaded == false) {
       const data_url = await browser.tabs.sendMessage(tab_id, { action: "getImgDataUrl", tab_id })
