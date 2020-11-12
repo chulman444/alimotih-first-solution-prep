@@ -41,6 +41,13 @@ function setupMessageHandler() {
       const el = getLargestImg()
       
       if(el) {
+        return el.src
+      }
+    }
+    else if(action == "getImgDataUrl") {
+      const el = getLargestImg()
+      
+      if(el) {
         /**
          * 2020-11-13 01:38
          * 

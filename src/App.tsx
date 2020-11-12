@@ -12,8 +12,12 @@ import { updateEntry, getEntry } from "./storage-local"
 type AppState = { tab_id?: number, state: "loading" | "pause" | ""}
 
 class App extends React.Component<any, any> {
+  targetImg:React.RefObject<HTMLImageElement>
+  
   constructor(props:any) {
     super(props)
+    
+    this.targetImg = React.createRef()
     
     /**
      * 2020-10-15 19:58
@@ -36,14 +40,6 @@ class App extends React.Component<any, any> {
     const tab_id = tab.id!
     const entry = await getEntry(tab_id)
     entry.tab_id = tab_id
-    try {
-      const img_src = await browser.tabs.sendMessage(tab_id, { action: "getImgSrc", tab_id })
-      entry.src = img_src
-    }
-    catch(e) {
-      console.log(e)
-      throw e
-    }
 
     /**
      * 2020-10-15 20:00
@@ -61,9 +57,27 @@ class App extends React.Component<any, any> {
     
     await new Promise((res, rej) => this.setState(entry, () => res()))
     
+    await this.loadImg()
+    
     if(this.state.state == "start") {
       const start_dt = await getEntry(tab_id, "start_dt")
       this.startTimerAnimation(tab_id, start_dt)
+    }
+  }
+  
+  async loadImg() {
+    const tab_id = this.state.tab_id
+    const img_src = await browser.tabs.sendMessage(tab_id, { action: "getImgSrc", tab_id })
+    /**
+     * 2020-11-13 02:12
+     * Wait for a moment because `this.setState` AND using `forceUpdate` isn't enough. So just use
+     * setTimeout.
+     */
+    await new Promise((res, rej) => this.setState({ src: img_src }, () => setTimeout(() => res(), 500)))
+    const is_loaded = this.targetImg.current!.complete
+    if(is_loaded == false) {
+      const data_url = await browser.tabs.sendMessage(tab_id, { action: "getImgDataUrl", tab_id })
+      await new Promise((res, rej) => this.setState({ src: data_url }, () => res()))
     }
   }
   
@@ -124,6 +138,7 @@ class App extends React.Component<any, any> {
           <div>
             <Tooltip title="This image on the page will be clicked">
               <img
+                ref={this.targetImg}
                 src={this.state.src}
                 alt={this.state.src == undefined ? "No image source was found from the page." : "This image element will be clicked."}
                 style={{ maxHeight: "300px", maxWidth: "200px" }}
