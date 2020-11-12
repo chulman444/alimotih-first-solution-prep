@@ -41,7 +41,18 @@ function setupMessageHandler() {
       const el = getLargestImg()
       
       if(el) {
-        return el.src
+        /**
+         * 2020-11-13 01:38
+         * 
+         * Changing `crossOrigin` sets `img.complete` to false, eg is `true` before
+         * changing. This results in getting data url using Convas return an empty
+         * image. Using `.decode()` sets `complete` back to true and returns the
+         * data url expectedly.
+         */
+        el.crossOrigin = 'anonymous'
+        await el.decode()
+        const dataUrl = getDataUrl(el)
+        return dataUrl
       }
     }
   });
@@ -146,4 +157,38 @@ function getLargestImg():HTMLImageElement|null {
     })
   
   return biggest_img_el
+}
+
+/**
+ * https://stackoverflow.com/a/934925
+ */
+function getDataUrl(img:HTMLImageElement):string {
+  // Create an empty canvas element
+  var canvas = document.createElement("canvas");
+  
+  /**
+   * 2020-11-13 01:31
+   * 
+   * Using width and height gives the shrunk size that is currently
+   * displayed in the image. That also means that these values will
+   * be even smaller with the console log open at the side of the
+   * same window.
+   * 
+   * The ratio is respected but when used for drawing into canvas,
+   * the image content is "cropped".
+   */
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+
+  // Copy the image contents to the canvas
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(img, 0, 0);
+
+  // Get the data-URL formatted image
+  // Firefox supports PNG and JPEG. You could check img.src to
+  // guess the original format, but be aware the using "image/jpg"
+  // will re-encode the image.
+  var dataURL = canvas.toDataURL("image/png");
+  return dataURL;
+  // return dataURL.replace(/^data:image\/(png|jpg);base64,/, "");
 }

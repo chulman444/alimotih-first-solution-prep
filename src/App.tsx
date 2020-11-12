@@ -37,7 +37,7 @@ class App extends React.Component<any, any> {
     const entry = await getEntry(tab_id)
     entry.tab_id = tab_id
     try {
-      const img_src = await browser.tabs.sendMessage(tab_id, { action: "getImgSrc", tab_id })      
+      const img_src = await browser.tabs.sendMessage(tab_id, { action: "getImgSrc", tab_id })
       entry.src = img_src
     }
     catch(e) {
@@ -129,6 +129,7 @@ class App extends React.Component<any, any> {
                 style={{ maxHeight: "300px", maxWidth: "200px" }}
               />
             </Tooltip>
+            {/* <div>{this.state.src}</div> */}
           </div>
         </div>
       </div>
