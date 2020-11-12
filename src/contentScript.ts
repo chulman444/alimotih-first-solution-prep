@@ -62,6 +62,19 @@ function setupMessageHandler() {
         return dataUrl
       }
     }
+    else if(action == "shakeTargetImgEl") {
+      const el = getLargestImg()
+      
+      if(el) {
+        const style_before = el.style
+        el.style.animation = 'shake 0.5s'
+        el.style.animationIterationCount = 'infinite'
+        setTimeout(() => {
+          // @ts-ignore
+          el.style = style_before
+        }, 500)
+      }
+    }
   });
 }
 

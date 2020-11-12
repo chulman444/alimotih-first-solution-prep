@@ -75,6 +75,7 @@ class App extends React.Component<any, any> {
      */
     await new Promise((res, rej) => this.setState({ src: img_src }, () => setTimeout(() => res(), 500)))
     const is_loaded = this.targetImg.current!.complete
+    
     if(is_loaded == false) {
       const data_url = await browser.tabs.sendMessage(tab_id, { action: "getImgDataUrl", tab_id })
       await new Promise((res, rej) => this.setState({ src: data_url }, () => res()))
@@ -103,7 +104,7 @@ class App extends React.Component<any, any> {
     return (
       <div>
         <div>Tab id: {this.state.tab_id}</div>
-        <div style={ { width: '500px', height: '300px', display: "flex", alignItems: "flex-start" } }>
+        <div style={ { width: '500px', height: '350px', display: "flex", alignItems: "flex-start" } }>
           <div>
             <Box position="relative" display="inline-flex">
               <CircularProgress
@@ -136,19 +137,28 @@ class App extends React.Component<any, any> {
             }
           </div>
           <div>
-            <Tooltip title="This image on the page will be clicked">
-              <img
-                ref={this.targetImg}
-                src={this.state.src}
-                alt={this.state.src == undefined ? "No image source was found from the page." : "This image element will be clicked."}
-                style={{ maxHeight: "300px", maxWidth: "200px" }}
-              />
-            </Tooltip>
-            {/* <div>{this.state.src}</div> */}
+            <div>
+              <button onClick={() => this.onShakeClick()}>Shake</button>
+            </div>
+            <div>
+              <Tooltip title="This image on the page will be clicked">
+                <img
+                  ref={this.targetImg}
+                  src={this.state.src}
+                  alt={this.state.src == undefined ? "No image source was found from the page." : "This image element will be clicked."}
+                  style={{ maxHeight: "300px", maxWidth: "200px" }}
+                />
+              </Tooltip>
+            </div>
           </div>
         </div>
       </div>
     )
+  }
+  
+  async onShakeClick() {
+    const tab_id = this.state.tab_id
+    await browser.tabs.sendMessage(tab_id, { action: "shakeTargetImgEl", tab_id })
   }
   
   async onIntervalUpdate(interval:string) {

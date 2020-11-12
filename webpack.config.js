@@ -44,6 +44,7 @@ module.exports = function() {
       new CopyPlugin({
         patterns: [
           { from: "public/**/*", to: "./", flatten: true },
+          { from: "src/*.css", to: "./", flatten: true },
           { from: "manifest.json" }
         ]
       }),
