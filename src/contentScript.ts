@@ -136,9 +136,14 @@ async function clearTimers(tab_id:number) {
  */
 function getLargestImg():HTMLImageElement|null {
   let biggest_img_el:HTMLImageElement|null = null
-  document.querySelectorAll("img").forEach(el => {
-    biggest_img_el = biggest_img_el ? biggest_img_el.width < el.width ? el : biggest_img_el : el
-  })
+  Array.from(document.querySelectorAll("img"))
+    .filter((el:HTMLImageElement) => {
+      const rect = el.getBoundingClientRect()
+      return rect.height > 0 && rect.width > 0
+    })
+    .forEach(el => {
+      biggest_img_el = biggest_img_el ? biggest_img_el.width < el.width ? el : biggest_img_el : el
+    })
   
   return biggest_img_el
 }
