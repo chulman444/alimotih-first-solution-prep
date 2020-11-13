@@ -11,13 +11,9 @@ import { updateEntry, getEntry } from "./storage-local"
 
 type AppState = { tab_id?: number, state: "loading" | "pause" | ""}
 
-class App extends React.Component<any, any> {
-  targetImg:React.RefObject<HTMLImageElement>
-  
+class App extends React.Component<any, any> {  
   constructor(props:any) {
     super(props)
-    
-    this.targetImg = React.createRef()
     
     /**
      * 2020-10-15 19:58
@@ -30,8 +26,7 @@ class App extends React.Component<any, any> {
       interval: 5,
       value: 100,
       timer_animation_id: undefined,
-      invalid_img_area: false,
-      src: undefined
+      invalid_img_area: false
     }
   }
   
@@ -57,33 +52,9 @@ class App extends React.Component<any, any> {
     
     await new Promise((res, rej) => this.setState(entry, () => res()))
     
-    await this.loadImg()
-    
     if(this.state.state == "start") {
       const start_dt = await getEntry(tab_id, "start_dt")
       this.startTimerAnimation(tab_id, start_dt)
-    }
-  }
-  
-  async loadImg() {
-    const tab_id = this.state.tab_id
-    const img_src = await browser.tabs.sendMessage(tab_id, { action: "getImgSrc", tab_id })
-    /**
-     * 2020-11-13 02:12
-     * Wait for a moment because `this.setState` AND using `forceUpdate` isn't enough. So just use
-     * setTimeout.
-     */
-    await new Promise((res, rej) => this.setState({ src: img_src }, () => setTimeout(() => res(), 500)))
-    /**
-     * 2020-11-13 02:55
-     * Don't use `complete` because it returns true even when the img url throws an error, and img element
-     * displaying the `alt` content.
-     */
-    const is_loaded = this.targetImg.current!.naturalWidth > 0
-    
-    if(is_loaded == false) {
-      const data_url = await browser.tabs.sendMessage(tab_id, { action: "getImgDataUrl", tab_id })
-      await new Promise((res, rej) => this.setState({ src: data_url }, () => res()))
     }
   }
   
@@ -109,7 +80,7 @@ class App extends React.Component<any, any> {
     return (
       <div>
         <div>Tab id: {this.state.tab_id}</div>
-        <div style={ { width: '500px', height: '350px', display: "flex", alignItems: "flex-start" } }>
+        <div style={ { display: "flex", alignItems: "flex-start" } }>
           <div>
             <Box position="relative" display="inline-flex">
               <CircularProgress
@@ -124,37 +95,28 @@ class App extends React.Component<any, any> {
                 right={0}
                 position="absolute"
                 display="flex"
+                flexDirection="column"
                 alignItems="center"
                 justifyContent="center"
               >
-                <input
-                  size={5}
-                  value={this.state.interval}
-                  onChange={(ev) => this.onIntervalUpdate(ev.target.value)}
-                  disabled={this.state.state == "start"}
-                />
-                <button onClick={() => this.toggleAction()}>{this.getActionText()}</button>
+                <div>
+                  <input
+                    size={5}
+                    value={this.state.interval}
+                    onChange={(ev) => this.onIntervalUpdate(ev.target.value)}
+                    disabled={this.state.state == "start"}
+                  />
+                  <button onClick={() => this.toggleAction()}>{this.getActionText()}</button>
+                </div>
+                <div>
+                  <button onClick={() => this.onShakeClick()}>Shake</button>
+                </div>
               </Box>
             </Box>
             {
               this.state.invalid_img_area ?
                 <div>Paused due to invalid image size</div> : <div></div>
             }
-          </div>
-          <div>
-            <div>
-              <button onClick={() => this.onShakeClick()}>Shake</button>
-            </div>
-            <div>
-              <Tooltip title="This image on the page will be clicked">
-                <img
-                  ref={this.targetImg}
-                  src={this.state.src}
-                  alt={this.state.src == undefined ? "No image source was found from the page." : "This image element will be clicked."}
-                  style={{ maxHeight: "300px", maxWidth: "200px" }}
-                />
-              </Tooltip>
-            </div>
           </div>
         </div>
       </div>
@@ -209,8 +171,7 @@ class App extends React.Component<any, any> {
       
       await updateEntry(tab_id, { value: percentage })
       
-      const src = await browser.tabs.sendMessage(tab_id, { action: "getImgSrc", tab_id })
-      this.setState({ value: percentage, src })
+      this.setState({ value: percentage })
     }, 100)
     
     this.setState({ state: "start", invalid_img_area: false, timer_animation_id })
