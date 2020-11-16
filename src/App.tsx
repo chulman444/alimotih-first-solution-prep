@@ -83,6 +83,7 @@ class App extends React.Component<any, any> {
         <div style={ { display: "flex", alignItems: "flex-start" } }>
           <div>
             <Box position="relative" display="inline-flex">
+              {/* Refer to material-ui for centering somethingin a circular probress: https://material-ui.com/components/progress/ */}
               <CircularProgress
                 variant="static"
                 value={this.state.value}
